@@ -1,0 +1,32 @@
+name: shop-ci
+on:
+  push:
+    paths: ["shop/**", ".github/workflows/shop-ci.yml"]
+  pull_request:
+    paths: ["shop/**", ".github/workflows/shop-ci.yml"]
+permissions:
+  contents: read
+defaults:
+  run:
+    working-directory: shop
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm test
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t storefront-kit:ci .
+      - name: Smoke test the container
+        run: |
+          docker run -d --name shop -p 3000:3000 -e NODE_ENV=development -e ADMIN_PASSWORD=ci-password-123 storefront-kit:ci
+          for i in $(seq 1 20); do curl -fs localhost:3000/readyz && break || sleep 1; done
+          curl -fs localhost:3000/api/products | grep -q '"products"'
+          docker logs shop
