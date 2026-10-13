@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dre × Sheen Dawg | Wobbly</title>
+<meta name="description" content="A wobbly, gooey, pointless-on-purpose collab page by Dre and Sheen Dawg. Just visuals. Just fun.">
+<style>
+:root{--bg:#14061f;--c1:#ff3d81;--c2:#ffd23f;--c3:#2de2e6;--c4:#8a5cff;--text:#fff7ec;--wob:1}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:ui-rounded,"Arial Rounded MT Bold","Trebuchet MS",system-ui,sans-serif;transition:background .8s}
+canvas{position:fixed;inset:0;width:100%;height:100%;filter:url(#goo);touch-action:none}
+.grain{position:fixed;inset:0;pointer-events:none;opacity:.09;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+main{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;text-align:center;padding:1rem}
+.stage{filter:url(#wobble);display:grid;gap:.1em;justify-items:center}
+.name{display:block;font-weight:900;line-height:.9;letter-spacing:-.02em;color:var(--text);text-shadow:.04em .05em 0 var(--c1),.08em .1em 0 var(--c4);margin:0}
+.dre{font-size:clamp(5rem,26vw,22rem)}
+.sheen{font-size:clamp(3rem,12.5vw,10.5rem);display:flex;flex-wrap:wrap;justify-content:center;gap:0 .3em}
+.w{display:inline-block;white-space:nowrap;font-weight:inherit}
+@media (max-width:600px){.sheen{font-size:20vw}.dre{font-size:36vw}}
+.x{font-size:clamp(2rem,7vw,5rem);color:var(--c2);font-weight:900;display:inline-block;animation:spin 6s linear infinite}
+.name span{display:inline-block;animation:bob calc(1.6s + var(--i)*.13s) ease-in-out infinite alternate;animation-delay:calc(var(--i)*-.2s);transform-origin:50% 90%;pointer-events:auto;cursor:default}
+.name span:hover{animation:squish .5s ease-out}
+@keyframes bob{from{transform:translateY(calc(-.06em*var(--wob))) rotate(calc(-4deg*var(--wob))) scale(1,1.02)}to{transform:translateY(calc(.05em*var(--wob))) rotate(calc(4deg*var(--wob))) scale(1.04,.96)}}
+@keyframes squish{0%{transform:scale(1)}25%{transform:scale(1.5,.5)}50%{transform:scale(.7,1.4)}75%{transform:scale(1.15,.9)}100%{transform:scale(1)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tag{margin:1.2rem 0 0;font-size:clamp(.95rem,2.4vw,1.35rem);letter-spacing:.18em;text-transform:uppercase;opacity:.9}
+.ui{position:fixed;left:0;right:0;bottom:0;display:flex;flex-wrap:wrap;gap:.7rem 1rem;align-items:center;justify-content:center;padding:1rem;z-index:2}
+.ui button,.ui label{font:inherit;font-weight:800;color:#14061f;background:var(--c2);border:0;border-radius:99px;padding:.65rem 1.2rem;box-shadow:0 .25rem 0 var(--c1);cursor:pointer;transition:transform .15s,box-shadow .15s}
+.ui button:hover,.ui button:focus-visible{transform:translateY(-3px) rotate(-2deg);outline:3px solid var(--text);outline-offset:2px}
+.ui button:active{transform:translateY(3px);box-shadow:0 0 0 var(--c1)}
+.ui label{display:flex;align-items:center;gap:.6rem;cursor:default;background:var(--c3)}
+.ui input{accent-color:#14061f;width:7rem}
+.hint{position:fixed;top:.9rem;left:0;right:0;text-align:center;font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;opacity:.7;z-index:2;pointer-events:none}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion:reduce){.name span,.x{animation:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="goo" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="16" result="b"/>
+      <feColorMatrix in="b" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -9"/>
+    </filter>
+    <filter id="wobble" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="2" seed="3" result="n">
+        <animate attributeName="baseFrequency" dur="9s" values="0.012 0.02;0.02 0.012;0.012 0.02" repeatCount="indefinite"/>
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="26" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+
+<canvas id="c" aria-hidden="true"></canvas>
+<div class="grain"></div>
+<div class="hint">poke it · drag it · click for more blobs</div>
+
+<main>
+  <div class="stage">
+    <h1 class="name dre" aria-label="Dre"><span style="--i:0">D</span><span style="--i:1">R</span><span style="--i:2">E</span></h1>
+    <div class="x" aria-hidden="true">×</div>
+    <p class="name sheen" aria-label="Sheen Dawg"><b class="w"><span style="--i:3">S</span><span style="--i:4">H</span><span style="--i:5">E</span><span style="--i:6">E</span><span style="--i:7">N</span></b><b class="w"><span style="--i:8">D</span><span style="--i:9">A</span><span style="--i:10">W</span><span style="--i:11">G</span></b></p>
+  </div>
+  <p class="tag">a wobbly collab · no point · all vibes</p>
+</main>
+
+<div class="ui">
+  <button id="mood" type="button">Change mood</button>
+  <button id="burst" type="button">Blob burst</button>
+  <label for="amt">Wobble <input id="amt" type="range" min="0" max="2" step="0.05" value="1"></label>
+</div>
+
+<script>
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const root = document.documentElement, cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const moods = [
+  { bg: "#14061f", c: ["#ff3d81", "#ffd23f", "#2de2e6", "#8a5cff"] },   // grape soda
+  { bg: "#04161c", c: ["#2de2e6", "#b6ff3d", "#ff7a3d", "#3d7bff"] },   // lava lamp lagoon
+  { bg: "#210a0a", c: ["#ff4d2e", "#ffb02e", "#ff3d81", "#fff1a8"] },   // sunburn
+  { bg: "#0b1020", c: ["#7cf0a5", "#5cc8ff", "#d68cff", "#fff"] }       // mint cosmos
+];
+let mood = 0, W, H, dpr;
+function applyMood() {
+  const m = moods[mood], s = root.style;
+  s.setProperty("--bg", m.bg);
+  m.c.forEach((c, i) => s.setProperty("--c" + (i + 1), c));
+}
+function resize() {
+  dpr = Math.min(devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  cv.width = W * dpr; cv.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+addEventListener("resize", resize); resize(); applyMood();
+
+const blobs = [];
+const rnd = (a, b) => a + Math.random() * (b - a);
+function add(x, y, big) {
+  blobs.push({ x, y, vx: rnd(-2, 2), vy: rnd(-2, 2), r: big ? rnd(50, 90) : rnd(22, 50), k: (Math.random() * 4) | 0, life: big ? Infinity : 900 });
+}
+for (let i = 0; i < 12; i++) add(rnd(0, W), rnd(0, H), true);
+
+const ptr = { x: W / 2, y: H / 2, down: false, on: false };
+function setPtr(e) { ptr.x = e.clientX; ptr.y = e.clientY; ptr.on = true; }
+addEventListener("pointermove", setPtr, { passive: true });
+addEventListener("pointerdown", (e) => { if (e.target.closest(".ui")) return; setPtr(e); ptr.down = true; for (let i = 0; i < 4; i++) add(e.clientX + rnd(-20, 20), e.clientY + rnd(-20, 20)); });
+addEventListener("pointerup", () => ptr.down = false);
+
+function step(t) {
+  ctx.clearRect(0, 0, W, H);
+  const cols = moods[mood].c;
+  for (let i = blobs.length - 1; i >= 0; i--) {
+    const b = blobs[i];
+    // gentle swim + pointer pull/push
+    b.vx += Math.sin(t / 900 + i) * .03; b.vy += Math.cos(t / 1100 + i * 2) * .03;
+    if (ptr.on) {
+      const dx = ptr.x - b.x, dy = ptr.y - b.y, d = Math.hypot(dx, dy) + 1;
+      if (d < 260) { const f = (ptr.down ? 1 : -.35) * (1 - d / 260) * .6; b.vx += dx / d * f; b.vy += dy / d * f; }
+    }
+    b.vx *= .985; b.vy *= .985;
+    b.x += b.vx; b.y += b.vy;
+    if (b.x < b.r || b.x > W - b.r) { b.vx *= -.9; b.x = Math.max(b.r, Math.min(W - b.r, b.x)); }
+    if (b.y < b.r || b.y > H - b.r) { b.vy *= -.9; b.y = Math.max(b.r, Math.min(H - b.r, b.y)); }
+    b.life--;
+    const fade = b.life < 60 ? Math.max(b.life, 0) / 60 : 1;
+    if (b.life <= 0) { blobs.splice(i, 1); continue; }
+    const squash = 1 + Math.min(Math.hypot(b.vx, b.vy) * .04, .35);
+    ctx.fillStyle = cols[b.k];
+    ctx.beginPath();
+    ctx.ellipse(b.x, b.y, b.r * fade * squash, b.r * fade / squash, Math.atan2(b.vy, b.vx), 0, 7);
+    ctx.fill();
+  }
+  // the pointer's own little blob, so it always feels attached to something
+  if (ptr.on) { ctx.fillStyle = cols[1]; ctx.beginPath(); ctx.arc(ptr.x, ptr.y, ptr.down ? 46 : 26, 0, 7); ctx.fill(); }
+  if (blobs.length > 70) blobs.splice(12, blobs.length - 70);
+  if (!reduce) requestAnimationFrame(step);
+}
+requestAnimationFrame(step);
+if (reduce) { for (let i = 0; i < 3; i++) step(i * 2000); }
+
+document.getElementById("mood").onclick = () => { mood = (mood + 1) % moods.length; applyMood(); };
+document.getElementById("burst").onclick = () => { for (let i = 0; i < 14; i++) add(W / 2 + rnd(-40, 40), H / 2 + rnd(-40, 40)); };
+document.getElementById("amt").oninput = (e) => root.style.setProperty("--wob", e.target.value);
+</script>
+</body>
+</html>
