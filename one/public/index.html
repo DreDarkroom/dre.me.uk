@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dre | the little blue blog</title>
+<meta name="description" content="Dre's little blue blog.">
+<style>
+:root{--bg:#10151c;--bg2:#161e29;--blue:#2f6bff;--sky:#7fb0ff;--aqua:#19f0d8;--white:#f4f8ff;--dim:#8d9bb0;--mx:50vw;--my:40vh}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--white);font:18px/1.6 ui-sans-serif,system-ui,"Segoe UI",sans-serif}
+body{min-height:100svh;display:grid;place-items:center;overflow:hidden;position:relative}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle 420px at var(--mx) var(--my),rgba(47,107,255,.28),transparent 70%),radial-gradient(ellipse at 85% 110%,rgba(25,240,216,.14),transparent 55%),linear-gradient(160deg,var(--bg2),var(--bg))}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 1px,transparent 1px 3px)}
+main{position:relative;z-index:1;text-align:center;padding:2rem 1.3rem}
+.one{font:800 clamp(7rem,32vw,16rem)/.85 ui-monospace,Consolas,monospace;margin:0;background:linear-gradient(180deg,var(--sky),var(--blue) 60%,var(--aqua));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 28px rgba(47,107,255,.5));animation:glow 6s ease-in-out infinite}
+@keyframes glow{50%{filter:drop-shadow(0 0 46px rgba(25,240,216,.55))}}
+h1{margin:1.2rem 0 .2rem;font-size:clamp(2.4rem,9vw,3.6rem);letter-spacing:-.03em}
+h1 span{color:var(--aqua)}
+p{margin:0;color:var(--dim);letter-spacing:.18em;text-transform:uppercase;font-size:.8rem}
+.bar{width:3.5rem;height:3px;margin:1.6rem auto 0;border-radius:3px;background:linear-gradient(90deg,var(--blue),var(--aqua))}
+@media(prefers-reduced-motion:reduce){.one{animation:none}}
+</style>
+</head>
+<body>
+<main>
+  <div class="one" aria-hidden="true">1</div>
+  <h1>Dre<span>.</span></h1>
+  <p>the little blue blog</p>
+  <div class="bar"></div>
+</main>
+<script>
+const root = document.documentElement, reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let mx = innerWidth / 2, my = innerHeight * .4, tx = mx, ty = my;
+addEventListener("pointermove", e => { tx = e.clientX; ty = e.clientY; }, { passive: true });
+(function f() { if (!reduce) { mx += (tx - mx) * .08; my += (ty - my) * .08; root.style.setProperty("--mx", mx + "px"); root.style.setProperty("--my", my + "px"); requestAnimationFrame(f); } })();
+</script>
+</body>
+</html>
