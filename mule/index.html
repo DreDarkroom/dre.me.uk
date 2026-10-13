@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050304">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%90%B4%3C/text%3E%3C/svg%3E">
+<title>MULE | the name game for people in a state</title>
+<meta name="description" content="MULE: a pass-the-phone party game. Get a letter, invent an alliterative CamelCase name (WobblyWendy), beat the clock, let the room judge.">
+<style>
+:root{--ink:#050304;--panel:#120709;--line:#3a1a1f;--red:#d1122b;--soft:#e8434f;--text:#f3e9e9;--dim:#b09c9c;--gold:#ffc857;--green:#3ddc97;--bad:#ff5d6c}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:var(--ink);color:var(--text);font:20px/1.45 ui-sans-serif,system-ui,"Segoe UI",sans-serif}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 50% -10%,rgba(209,18,43,.32),transparent 55%),radial-gradient(circle at 50% 120%,#1a0508,transparent 60%)}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.015) 0 1px,transparent 1px 3px);mix-blend-mode:overlay}
+#app{position:relative;z-index:1;max-width:34rem;margin:0 auto;padding:1.2rem 1.1rem 5rem;min-height:100svh;display:flex;flex-direction:column}
+.top{display:flex;justify-content:space-between;align-items:center;gap:.5rem;font-size:.8rem;color:var(--dim);margin-bottom:.4rem}
+.top a,.top button{color:var(--dim);background:none;border:0;font:inherit;text-decoration:none;padding:.5rem .3rem;cursor:pointer}
+h1,h2,h3,p{margin:0}
+.logo{font:900 clamp(4rem,22vw,7rem)/.9 ui-monospace,Consolas,monospace;letter-spacing:-.04em;color:var(--red);text-shadow:0 0 40px rgba(209,18,43,.55);text-align:center}
+.sub{text-align:center;color:var(--dim);margin:.6rem 0 1.4rem}
+.sub b{color:var(--gold);font-weight:700;white-space:nowrap}
+.stack{display:grid;gap:.8rem}
+.grow{flex:1}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:1rem;padding:1rem}
+.panel h3{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:.6rem}
+.rules{margin:0;padding-left:1.2rem;color:var(--text)}
+.rules li{margin:.3rem 0}
+.rules code,.mono{font-family:ui-monospace,Consolas,monospace;color:var(--gold)}
+button.btn{appearance:none;width:100%;min-height:4.2rem;border-radius:1rem;border:2px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);font:800 1.2rem/1.1 ui-sans-serif,system-ui,sans-serif;padding:.8rem 1rem;cursor:pointer;transition:transform .12s,background .2s,border-color .2s}
+button.btn:active{transform:scale(.97)}
+button.btn:focus-visible,input:focus-visible,.chip:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+button.btn.go{background:var(--red);border-color:var(--soft);box-shadow:0 0 30px rgba(209,18,43,.45)}
+button.btn.green{background:rgba(61,220,151,.14);border-color:var(--green)}
+button.btn.gold{background:rgba(255,200,87,.16);border-color:var(--gold)}
+button.btn.bad{background:rgba(255,93,108,.12);border-color:var(--bad)}
+button.btn.small{min-height:3rem;font-size:1rem}
+button.btn:disabled{opacity:.4}
+.row{display:flex;gap:.6rem}
+.row>*{flex:1}
+input.txt{width:100%;min-height:4rem;font:700 1.4rem/1 ui-sans-serif,system-ui,sans-serif;color:var(--text);background:#0b0507;border:2px solid var(--line);border-radius:1rem;padding:.6rem 1rem}
+input.txt::placeholder{color:#6a5558}
+.plist{display:grid;gap:.5rem;margin:.2rem 0 .8rem}
+.pl{display:flex;align-items:center;gap:.6rem;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:.8rem;padding:.3rem .3rem .3rem 1rem;font-weight:700}
+.pl span{flex:1;overflow:hidden;text-overflow:ellipsis}
+.pl button{background:none;border:0;color:var(--dim);font-size:1.4rem;min-width:3rem;min-height:3rem;cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:.5rem}
+.chip{appearance:none;font:700 1rem ui-sans-serif,system-ui,sans-serif;min-height:3rem;padding:.4rem 1rem;border-radius:99px;border:2px solid var(--line);background:none;color:var(--dim);cursor:pointer}
+.chip[aria-pressed=true]{border-color:var(--gold);color:var(--gold);background:rgba(255,200,87,.1)}
+.lab{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:1rem 0 .4rem}
+.center{text-align:center}
+.big{font-size:clamp(2rem,9vw,3rem);font-weight:900;line-height:1.05;letter-spacing:-.02em}
+.who{color:var(--gold)}
+.score{display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center;margin:1rem 0}
+.score span{font-size:.85rem;padding:.25rem .7rem;border-radius:99px;border:1px solid var(--line);color:var(--dim)}
+.score span.me{border-color:var(--gold);color:var(--gold)}
+.letter{font:900 clamp(9rem,48vw,15rem)/1 ui-monospace,Consolas,monospace;text-align:center;color:var(--red);text-shadow:0 0 60px rgba(209,18,43,.7);margin:.2rem 0;user-select:none}
+.letter.pop{animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.4) rotate(-12deg)}to{transform:none}}
+.ring{position:relative;width:5.5rem;height:5.5rem;margin:0 auto}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:8}
+.ring .bg{stroke:var(--line)}
+.ring .fg{stroke:var(--green);stroke-linecap:round;transition:stroke .3s}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font:900 1.7rem ui-monospace,monospace}
+.ring.low .fg{stroke:var(--bad)}
+.ring.low b{color:var(--bad);animation:beat .5s infinite}
+@keyframes beat{50%{transform:scale(1.2)}}
+.prev{min-height:3.6rem;text-align:center;font:900 clamp(1.8rem,8vw,2.6rem)/1.2 ui-monospace,Consolas,monospace;word-break:break-all;margin:.8rem 0 .2rem}
+.prev em{font-style:normal;color:var(--red)}
+.msg{min-height:1.6rem;text-align:center;font-size:.95rem;color:var(--dim)}
+.msg.ok{color:var(--green)}.msg.no{color:var(--bad)}
+.shake{animation:shake .4s}
+@keyframes shake{20%,60%{transform:translateX(-10px)}40%,80%{transform:translateX(10px)}}
+.name{font:900 clamp(2rem,11vw,3.4rem)/1.05 ui-monospace,Consolas,monospace;text-align:center;word-break:break-word;margin:1rem 0;color:var(--text)}
+.name i{font-style:normal;color:var(--red)}
+.dare{font-size:1.5rem;font-weight:700;text-align:center;padding:1.4rem 1rem;border:2px dashed var(--gold);border-radius:1rem;margin:1rem 0;background:rgba(255,200,87,.06)}
+.fine{font-size:.78rem;color:var(--dim);text-align:center;margin-top:1.6rem}
+.rank{display:grid;gap:.5rem;margin:1rem 0}
+.rank div{display:flex;gap:.7rem;align-items:center;padding:.8rem 1rem;border-radius:1rem;border:1px solid var(--line);background:var(--panel);font-weight:800}
+.rank div:first-child{border-color:var(--gold);background:rgba(255,200,87,.1);font-size:1.4rem}
+.rank .n{flex:1}.rank .p{font-family:ui-monospace,monospace;color:var(--gold)}
+.hall{display:grid;gap:.3rem;margin:0;padding:0;list-style:none;font-family:ui-monospace,Consolas,monospace;font-size:.95rem}
+.hall li{display:flex;justify-content:space-between;gap:.5rem}.hall small{color:var(--dim);font-family:inherit}
+.rain{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:5}
+.rain span{position:absolute;top:-2rem;font-size:1.8rem;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rain{display:none}}
+</style>
+</head>
+<body>
+<main id="app" aria-live="polite"></main>
+<script>
+"use strict";
+/* ---------- tiny helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const store = {
+  get() { try { return JSON.parse(localStorage.getItem("mule.v1")) || {}; } catch { return {}; } },
+  set(o) { try { localStorage.setItem("mule.v1", JSON.stringify(o)); } catch { /* private mode: fine */ } }
+};
+const buzz = (ms) => { try { navigator.vibrate && navigator.vibrate(ms); } catch {} };
+
+/* ---------- content ---------- */
+const POOL = "ABCDEFGHJKLMNOPRSTVWY".split(""); // skips the cruel ones (Q X Z U I)
+// [adjectives, names] per letter, for the "I'm stuck" hint
+const HINTS = {
+  A:[["Angry","Awkward"],["Alan","Agnes"]], B:[["Bouncy","Blotto"],["Barry","Brenda"]], C:[["Cheeky","Chaotic"],["Colin","Carol"]],
+  D:[["Dizzy","Dodgy"],["Dave","Debbie"]], E:[["Eager","Eccentric"],["Eric","Edna"]], F:[["Funky","Fancy"],["Frank","Fiona"]],
+  G:[["Grumpy","Giddy"],["Gary","Gladys"]], H:[["Hazy","Hairy"],["Harold","Hilda"]], I:[["Iffy","Itchy"],["Ian","Ivy"]],
+  J:[["Jolly","Jittery"],["Jeff","Janet"]], K:[["Kooky","Knackered"],["Keith","Karen"]], L:[["Lairy","Legless"],["Larry","Linda"]],
+  M:[["Merry","Muddy"],["Mick","Maureen"]], N:[["Naughty","Nifty"],["Norman","Nancy"]], O:[["Odd","Overexcited"],["Oscar","Olive"]],
+  P:[["Peppy","Pickled"],["Pete","Patsy"]], Q:[["Quirky","Quivering"],["Quentin","Queenie"]], R:[["Rowdy","Rambling"],["Reg","Roxy"]],
+  S:[["Sloshed","Soggy"],["Steve","Sandra"]], T:[["Tipsy","Twirly"],["Terry","Tracy"]], U:[["Unruly","Upbeat"],["Ulrich","Ursula"]],
+  V:[["Vibey","Vague"],["Vince","Val"]], W:[["Wobbly","Wonky"],["Wendy","Wayne"]], X:[["Xtra","Xenial"],["Xavier","Xena"]],
+  Y:[["Yappy","Yodelling"],["Yvonne","Yuri"]], Z:[["Zesty","Zany"],["Zack","Zelda"]]
+};
+const DARES = [
+  "Do your best mule bray. Full commitment. HEE-HAW.",
+  "Compliment the person on your left, in a posh voice.",
+  "Everyone else votes: the mule must drink a glass of water. Hydrate, hero.",
+  "Swap seats with whoever you think is the least wobbly.",
+  "Say the alphabet backwards from M. Or take a sip of water.",
+  "Give the person opposite a nickname. It sticks until the game ends.",
+  "Do 5 air-drum fills. Wrong ones are better.",
+  "Tell everyone your worst ever haircut. Detail required.",
+  "Speak only in whispers until your next turn.",
+  "Hold a plank for 10 seconds, or a dramatic pose of your choice.",
+  "Impersonate another player. They award marks out of 10.",
+  "Sing the first line of any song. Nobody is allowed to help.",
+  "High-five every person in the room. Slowly. With eye contact.",
+  "Name 3 mule facts. Making them up is allowed. Selling them is mandatory.",
+  "Do your mule-walk to the nearest door and back.",
+  "Make up a one-line mule slogan. The room scores it.",
+  "Give a 10 second motivational speech to the nearest object.",
+  "Stand up, spin round once, sit down, say \"I am a majestic mule\"."
+];
+const RATINGS = {
+  legend: { pts: 3, label: "🔥 LEGEND", cls: "gold", say: ["Absolute scenes.", "Frame it.", "That's going on the hall of fame.", "Mule of the year."] },
+  solid:  { pts: 1, label: "👍 SOLID",  cls: "green", say: ["Respectable mule.", "Does the job.", "A solid trot."] },
+  nope:   { pts: 0, label: "💀 NOPE",   cls: "bad", say: ["The room has spoken.", "Tragic.", "That mule has fallen over."] }
+};
+
+/* ---------- audio (all synthesised, no files) ---------- */
+let AC = null;
+const ac = () => { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === "suspended") AC.resume(); } catch {} return AC; };
+function tone(f, d, type = "square", vol = .12, when = 0) {
+  if (!S.sound) return; const c = ac(); if (!c) return;
+  const t = c.currentTime + when, o = c.createOscillator(), g = c.createGain();
+  o.type = type; o.frequency.value = f; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + d);
+  o.connect(g).connect(c.destination); o.start(t); o.stop(t + d + .02);
+}
+function bray() { // hee-HAW: sawtooth through a lowpass with a wobbling pitch
+  if (!S.sound) return; const c = ac(); if (!c) return; const t = c.currentTime;
+  const o = c.createOscillator(), lfo = c.createOscillator(), lg = c.createGain(), f = c.createBiquadFilter(), g = c.createGain();
+  o.type = "sawtooth"; f.type = "lowpass"; f.frequency.value = 1300; f.Q.value = 6;
+  lfo.frequency.value = 28; lg.gain.value = 22; lfo.connect(lg).connect(o.frequency);
+  const seq = [[0, 330], [.18, 640], [.34, 660], [.38, 250], [.6, 170], [.95, 150]];
+  o.frequency.setValueAtTime(seq[0][1], t);
+  seq.slice(1).forEach(([dt, hz]) => o.frequency.linearRampToValueAtTime(hz, t + dt));
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.22, t + .05); g.gain.setValueAtTime(.22, t + .8); g.gain.linearRampToValueAtTime(0, t + 1.05);
+  o.connect(f).connect(g).connect(c.destination); o.start(t); lfo.start(t); o.stop(t + 1.1); lfo.stop(t + 1.1);
+}
+const sfx = {
+  tick: () => tone(880, .06, "square", .06),
+  low: () => tone(520, .09, "square", .1),
+  wrong: () => { tone(160, .25, "sawtooth", .15); tone(120, .3, "sawtooth", .15, .12); },
+  ok: () => { tone(660, .1, "triangle", .2); tone(990, .18, "triangle", .2, .09); },
+  fan: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, .25, "triangle", .2, i * .1))
+};
+
+/* ---------- state ---------- */
+const saved = store.get();
+const S = {
+  screen: "setup", players: (saved.players || []).slice(0, 12).map((n) => ({ name: n, score: 0, names: [] })),
+  rounds: 3, secs: 15, mode: "type", sound: true,
+  turns: [], t: 0, letter: "", used: new Set(), cur: null, timer: null, wake: null
+};
+const app = $("#app");
+
+/* ---------- name rules ---------- */
+const cap = (w) => w[0].toUpperCase() + w.slice(1).toLowerCase();
+function parse(raw, letter) {
+  const s = raw.replace(/[^A-Za-z\s]/g, " ").trim();
+  if (!s) return { ok: false, msg: "Two words. Same letter. Go." };
+  let parts = s.split(/\s+/);
+  if (parts.length === 1) parts = s.match(/[A-Z]?[a-z]+|[A-Z]+(?![a-z])/g) || [s];
+  if (parts.length < 2) return { ok: false, msg: "Need two words (WobblyWendy or wobbly wendy)", part: cap(parts[0]) };
+  if (parts.length > 2) return { ok: false, msg: "Only two words, first name and second name" };
+  const [a, b] = parts.map(cap);
+  const view = a + b;
+  if (a.length < 2 || b.length < 2) return { ok: false, msg: "Each word needs at least 2 letters", view };
+  if (a[0] !== letter || b[0] !== letter) return { ok: false, msg: `Both words must start with ${letter}`, view };
+  if (a === b) return { ok: false, msg: "Two different words please", view };
+  if (S.used.has(view.toLowerCase())) return { ok: false, msg: "Already taken. Be original!", view };
+  return { ok: true, name: view, a, b, msg: "Perfect mule ✔" };
+}
+const nameHtml = (n) => { const m = n.match(/^([A-Z][a-z]*)([A-Z][a-z]*)$/); return m ? `<i>${m[1][0]}</i>${esc(m[1].slice(1))}<i>${m[2][0]}</i>${esc(m[2].slice(1))}` : esc(n); };
+
+/* ---------- screens ---------- */
+function frame(inner, opts = {}) {
+  app.innerHTML = `<div class="top"><a href="/" aria-label="Back to dre.me.uk">← dre.me.uk</a><button data-act="sound" aria-pressed="${S.sound}">${S.sound ? "🔊 sound on" : "🔇 muted"}</button></div>${inner}`;
+  if (opts.focus) { const f = $(opts.focus); f && f.focus({ preventScroll: true }); }
+}
+function scoreStrip() {
+  const cur = S.turns[S.t];
+  return `<div class="score">${S.players.map((p, i) => `<span class="${cur && cur.p === i ? "me" : ""}">${esc(p.name)} ${p.score}</span>`).join("")}</div>`;
+}
+
+function setup() {
+  S.screen = "setup"; clearInterval(S.timer);
+  const hall = (saved.hall || []).slice(0, 8);
+  const can = S.players.length >= 2;
+  frame(`
+    <h1 class="logo">MULE</h1>
+    <p class="sub">The name game for people in a state.<br>Get a letter. Invent <b>WobblyWendy</b>. Beat the clock.</p>
+    <div class="stack">
+      <div class="panel"><h3>How it works</h3>
+        <ol class="rules">
+          <li>Pass the phone. You get a <b>letter</b>.</li>
+          <li>Invent a first and second name that both start with it: <span class="mono">DizzyDave</span>.</li>
+          <li>Type it in (spaces and capitals are fixed for you) before the clock dies.</li>
+          <li>The room rates it. <b>Legend</b> +3, <b>Solid</b> +1, <b>Nope</b> gets a dare.</li>
+        </ol></div>
+      <div class="panel"><h3>Who's playing? (${S.players.length})</h3>
+        <div class="plist">${S.players.map((p, i) => `<div class="pl"><span>${esc(p.name)}</span><button data-act="del" data-i="${i}" aria-label="Remove ${esc(p.name)}">✕</button></div>`).join("")}</div>
+        <form data-form="add" class="row" autocomplete="off"><input class="txt" id="pn" maxlength="14" placeholder="Add a player" enterkeyhint="done" autocapitalize="words" autocorrect="off" spellcheck="false" aria-label="Player name"><button class="btn small" style="max-width:6rem" type="submit">Add</button></form>
+      </div>
+      <div class="panel"><h3>Settings</h3>
+        <div class="lab" style="margin-top:0">Turns each</div>
+        <div class="chips" role="group" aria-label="Turns each">${[2, 3, 5].map((n) => `<button class="chip" data-act="rounds" data-v="${n}" aria-pressed="${S.rounds === n}">${n}</button>`).join("")}</div>
+        <div class="lab">Time per turn</div>
+        <div class="chips" role="group" aria-label="Time per turn">${[[25, "Chill 25s"], [15, "Normal 15s"], [8, "Chaos 8s"]].map(([n, l]) => `<button class="chip" data-act="secs" data-v="${n}" aria-pressed="${S.secs === n}">${l}</button>`).join("")}</div>
+        <div class="lab">Answer by</div>
+        <div class="chips" role="group" aria-label="Answer by"><button class="chip" data-act="mode" data-v="type" aria-pressed="${S.mode === "type"}">⌨️ Typing</button><button class="chip" data-act="mode" data-v="shout" aria-pressed="${S.mode === "shout"}">📣 Shouting (too wobbly to type)</button></div>
+      </div>
+      <button class="btn go" data-act="start" ${can ? "" : "disabled"}>${can ? "Saddle up →" : "Add at least 2 players"}</button>
+      ${hall.length ? `<div class="panel"><h3>Hall of Legends</h3><ul class="hall">${hall.map((h) => `<li><span>${esc(h.n)}</span><small>${esc(h.p)}</small></li>`).join("")}</ul></div>` : ""}
+    </div>
+    <p class="fine">Play daft, not dangerous. Water counts as a sip. Look after each other, and never drink and drive.</p>`,
+    { focus: S.players.length ? null : "#pn" });
+}
+
+function startGame() {
+  ac(); S.players.forEach((p) => { p.score = 0; p.names = []; });
+  S.used = new Set(); S.turns = []; S.t = 0;
+  const letters = []; while (letters.length < S.players.length * S.rounds) letters.push(...shuffle(POOL));
+  let k = 0;
+  for (let r = 0; r < S.rounds; r++) for (let p = 0; p < S.players.length; p++) S.turns.push({ p, letter: letters[k++] });
+  store.set({ ...store.get(), players: S.players.map((p) => p.name) });
+  try { navigator.wakeLock && navigator.wakeLock.request("screen").then((w) => (S.wake = w)).catch(() => {}); } catch {}
+  pass();
+}
+
+function pass() {
+  S.screen = "pass"; const turn = S.turns[S.t], p = S.players[turn.p];
+  frame(`
+    <div class="grow center" style="display:flex;flex-direction:column;justify-content:center;gap:1.2rem">
+      <p class="lab" style="margin:0">Turn ${S.t + 1} of ${S.turns.length}</p>
+      <p style="font-size:1.1rem;color:var(--dim)">Pass the phone to</p>
+      <h2 class="big who">${esc(p.name)}</h2>
+      ${scoreStrip()}
+    </div>
+    <button class="btn go" data-act="ready">I'm ready 🐴</button>`);
+}
+
+function play() {
+  S.screen = "play"; const turn = S.turns[S.t]; S.letter = turn.letter;
+  S.cur = { t0: 0, hints: 0, done: false, ms: S.secs * 1000 };
+  const p = S.players[turn.p], typing = S.mode === "type";
+  frame(`
+    <p class="center" style="color:var(--dim)"><span class="who">${esc(p.name)}</span>, your letter is</p>
+    <div class="letter" id="L" aria-live="assertive">?</div>
+    <div class="ring" id="ring" role="timer" aria-label="Time left"><svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="44"/><circle class="fg" id="fg" cx="50" cy="50" r="44" stroke-dasharray="276.5" stroke-dashoffset="0"/></svg><b id="secs">${S.secs}</b></div>
+    <div class="grow" id="box" style="visibility:hidden;margin-top:.4rem">
+      ${typing ? `
+        <div class="prev" id="prev"></div><div class="msg" id="msg"></div>
+        <form data-form="guess" autocomplete="off" class="stack" style="margin-top:.4rem">
+          <input class="txt" id="nm" placeholder="e.g. ${esc(HINTS[turn.letter][0][0])} ${esc(HINTS[turn.letter][1][0])}" autocapitalize="words" autocorrect="off" autocomplete="off" spellcheck="false" enterkeyhint="done" maxlength="30" aria-label="Your mule name">
+          <button class="btn go" type="submit">Lock it in 🔒</button>
+        </form>`
+      : `<p class="center" style="font-size:1.4rem;font-weight:800;margin:1rem 0">Shout your mule name!<br><span style="color:var(--dim);font-weight:500;font-size:1rem">Both words start with ${turn.letter}. The room is the judge.</span></p>
+        <button class="btn go" data-act="shouted">I SHOUTED IT 📣</button>`}
+      <button class="btn small" style="margin-top:.7rem" data-act="hint">🆘 I'm stuck (−1 point)</button>
+      <div class="msg" id="hintmsg" style="margin-top:.4rem"></div>
+    </div>`);
+  // slot-machine reveal, then the clock starts
+  const L = $("#L"); let n = 0;
+  const spin = setInterval(() => { L.textContent = pick(POOL); sfx.tick(); if (++n > 9) { clearInterval(spin); L.textContent = turn.letter; L.classList.add("pop"); bray(); buzz(60); begin(); } }, 70);
+}
+
+function begin() {
+  const box = $("#box"); box.style.visibility = "visible";
+  const nm = $("#nm"); if (nm) { nm.focus(); nm.addEventListener("input", live); }
+  S.cur.t0 = performance.now(); let lastSec = S.secs + 1;
+  clearInterval(S.timer);
+  S.timer = setInterval(() => {
+    const left = Math.max(0, S.cur.ms - (performance.now() - S.cur.t0)), s = Math.ceil(left / 1000);
+    const fg = $("#fg"); if (!fg) return clearInterval(S.timer);
+    fg.style.strokeDashoffset = 276.5 * (1 - left / S.cur.ms); $("#secs").textContent = s;
+    $("#ring").classList.toggle("low", s <= 5);
+    if (s !== lastSec) { lastSec = s; if (s <= 3 && s > 0) { sfx.low(); buzz(30); } else if (s <= 5 && s > 0) sfx.tick(); }
+    if (left <= 0) timeUp();
+  }, 100);
+}
+
+function live() {
+  const r = parse($("#nm").value, S.letter), prev = $("#prev"), msg = $("#msg");
+  prev.innerHTML = r.ok ? nameHtml(r.name) : esc(r.view || r.part || "");
+  msg.textContent = $("#nm").value.trim() ? r.msg : ""; msg.className = "msg " + (r.ok ? "ok" : $("#nm").value.trim().length > 3 ? "no" : "");
+}
+const speedBonus = () => { const f = 1 - (performance.now() - S.cur.t0) / S.cur.ms; return f > .5 ? 2 : f > .2 ? 1 : 0; };
+
+function submit(auto) {
+  const nm = $("#nm"); if (!nm || S.cur.done) return;
+  const r = parse(nm.value, S.letter);
+  if (!r.ok) {
+    if (auto) return false;
+    sfx.wrong(); buzz([60, 40, 60]); $("#msg").textContent = r.msg; $("#msg").className = "msg no";
+    nm.classList.remove("shake"); void nm.offsetWidth; nm.classList.add("shake"); return false;
+  }
+  S.cur.done = true; clearInterval(S.timer);
+  S.cur.name = r.name; S.cur.speed = auto ? 0 : speedBonus(); S.used.add(r.name.toLowerCase());
+  sfx.ok(); judge(); return true;
+}
+
+function timeUp() {
+  clearInterval(S.timer); if (S.cur.done) return;
+  if (S.mode === "type") {
+    if (submit(true)) return; // mercy: a valid name sitting in the box still counts
+    S.cur.done = true; sfx.wrong(); buzz(300);
+    return fail("⏰ Time's up!", "The mule stalled.");
+  }
+  S.cur.done = true; S.cur.speed = 0; S.cur.name = null; sfx.wrong(); judge();
+}
+
+function shouted() { if (S.cur.done) return; S.cur.done = true; clearInterval(S.timer); S.cur.speed = speedBonus(); S.cur.name = null; sfx.ok(); judge(); }
+
+function hint() {
+  if (S.cur.hints >= 3) return;
+  S.cur.hints++; const [adj, nam] = HINTS[S.letter];
+  $("#hintmsg").textContent = `Try: ${adj[S.cur.hints % 2]} + ${nam[S.cur.hints % 2]}… (−1)`;
+  const nm = $("#nm"); nm && nm.focus();
+}
+
+function judge() {
+  S.screen = "judge"; const c = S.cur, shout = !c.name;
+  frame(`
+    <div class="grow center" style="display:flex;flex-direction:column;justify-content:center">
+      <p style="color:var(--dim)">${esc(S.players[S.turns[S.t].p].name)} presents…</p>
+      ${shout ? `<div class="name">🐴 <i>${S.letter}</i>… <i>${S.letter}</i>…</div><p style="color:var(--dim)">(they shouted it. Did it count?)</p>`
+              : `<div class="name">${nameHtml(c.name)}</div>`}
+      <p class="lab">Room, rate this mule${c.speed ? ` · speed bonus +${c.speed}` : ""}${c.hints ? ` · hints −${c.hints}` : ""}</p>
+    </div>
+    <div class="stack">${Object.entries(RATINGS).map(([k, r]) => `<button class="btn ${r.cls}" data-act="rate" data-k="${k}">${r.label}${r.pts ? ` +${r.pts}` : " (dare!)"}</button>`).join("")}</div>`);
+  if (!shout) bray();
+}
+
+function rate(k) {
+  const c = S.cur, r = RATINGS[k], p = S.players[S.turns[S.t].p];
+  let pts = r.pts + (k === "nope" ? 0 : (c.name ? 1 : 0) + c.speed) - c.hints; pts = Math.max(0, pts);
+  p.score += pts; if (c.name) p.names.push({ n: c.name, k });
+  if (k === "legend") {
+    sfx.fan(); rain(["🔥", "🐴", "⭐", "🎉"]); const s = store.get(); s.hall = [{ n: c.name || `(shouted ${S.letter}${S.letter})`, p: p.name }, ...(s.hall || [])].slice(0, 30); store.set(s); saved.hall = s.hall;
+  }
+  if (k === "nope") return fail("💀 " + pick(r.say), "", pts);
+  frame(`
+    <div class="grow center" style="display:flex;flex-direction:column;justify-content:center;gap:.8rem">
+      <h2 class="big">${r.label}</h2><p style="font-size:1.2rem">${pick(r.say)}</p>
+      <p class="who big" style="font-size:2.6rem">+${pts}</p>${scoreStrip()}
+    </div>
+    <button class="btn go" data-act="next">Next →</button>`);
+}
+
+function fail(title, sub, pts = 0) {
+  S.screen = "dare";
+  frame(`
+    <div class="grow center" style="display:flex;flex-direction:column;justify-content:center">
+      <h2 class="big">${esc(title)}</h2>${sub ? `<p style="color:var(--dim)">${esc(sub)}</p>` : ""}
+      <p class="lab">Forfeit for ${esc(S.players[S.turns[S.t].p].name)}</p>
+      <div class="dare">${esc(pick(DARES))}</div>
+      <p style="color:var(--dim);font-size:.9rem">Not feeling it? Skip it with a sip of water. No shame.</p>
+    </div>
+    <button class="btn go" data-act="next">Done (or skipped) →</button>`);
+  bray(); buzz(200);
+}
+
+function next() { S.t++; S.t >= S.turns.length ? final() : pass(); }
+
+function final() {
+  S.screen = "final"; clearInterval(S.timer); try { S.wake && S.wake.release(); } catch {}
+  const rank = S.players.slice().sort((a, b) => b.score - a.score), medal = ["🥇", "🥈", "🥉"];
+  const top = rank.filter((p) => p.score === rank[0].score);
+  sfx.fan(); rain(["🐴", "🎉", "🏆", "✨", "🔥"]);
+  frame(`
+    <h1 class="big center" style="margin:.6rem 0">${top.length > 1 ? "It's a tie! 🤝" : esc(rank[0].name) + " wins 🏆"}</h1>
+    <p class="sub" style="margin-top:.2rem">${top.length > 1 ? esc(top.map((p) => p.name).join(" & ")) + " share the crown." : "Supreme Mule. Everyone bow."}</p>
+    <div class="rank">${rank.map((p, i) => `<div><span>${medal[i] || i + 1}</span><span class="n">${esc(p.name)}</span><span class="p">${p.score} pts</span></div>`).join("")}</div>
+    <div class="panel"><h3>Tonight's mules</h3><ul class="hall">${S.players.flatMap((p) => p.names.map((m) => `<li><span>${nameHtml(m.n)}</span><small>${esc(p.name)} ${RATINGS[m.k].label.split(" ")[0]}</small></li>`)).join("") || "<li>Nobody typed a name. Shouting only!</li>"}</ul></div>
+    <div class="stack" style="margin-top:1rem">
+      <button class="btn go" data-act="again">Go again (same crew)</button>
+      <button class="btn" data-act="share">📋 Copy / share results</button>
+      <button class="btn small" data-act="setup">Change players & settings</button>
+    </div>`);
+}
+
+function share() {
+  const rank = S.players.slice().sort((a, b) => b.score - a.score);
+  const text = `🐴 MULE results\n${rank.map((p, i) => `${i + 1}. ${p.name} ${p.score}pts`).join("\n")}\n\nMules: ${S.players.flatMap((p) => p.names.map((m) => m.n)).join(", ")}\nPlay: https://dre.me.uk/mule/`;
+  const done = (m) => { const b = $('[data-act="share"]'); if (b) b.textContent = m; };
+  if (navigator.share) navigator.share({ text }).catch(() => {});
+  else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => done("✔ Copied!"), () => done("Couldn't copy"));
+  else done("Couldn't copy");
+}
+
+function rain(emojis) {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const d = document.createElement("div"); d.className = "rain"; d.setAttribute("aria-hidden", "true");
+  for (let i = 0; i < 28; i++) { const s = document.createElement("span"); s.textContent = pick(emojis); s.style.left = Math.random() * 100 + "vw"; s.style.animationDuration = 2 + Math.random() * 2 + "s"; s.style.animationDelay = Math.random() * .8 + "s"; d.append(s); }
+  document.body.append(d); setTimeout(() => d.remove(), 5000);
+}
+
+/* ---------- events ---------- */
+app.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const a = b.dataset.act, v = b.dataset.v;
+  ac();
+  if (a === "sound") { S.sound = !S.sound; b.textContent = S.sound ? "🔊 sound on" : "🔇 muted"; b.setAttribute("aria-pressed", S.sound); if (S.sound) sfx.ok(); }
+  else if (a === "del") { S.players.splice(+b.dataset.i, 1); setup(); }
+  else if (a === "rounds") { S.rounds = +v; setup(); }
+  else if (a === "secs") { S.secs = +v; setup(); }
+  else if (a === "mode") { S.mode = v; setup(); }
+  else if (a === "start" || a === "again") startGame();
+  else if (a === "ready") play();
+  else if (a === "shouted") shouted();
+  else if (a === "hint") hint();
+  else if (a === "rate") rate(b.dataset.k);
+  else if (a === "next") next();
+  else if (a === "share") share();
+  else if (a === "setup") setup();
+});
+app.addEventListener("submit", (e) => {
+  e.preventDefault(); const f = e.target.dataset.form;
+  if (f === "add") {
+    const i = $("#pn"), n = i.value.trim().slice(0, 14);
+    if (n && S.players.length < 12 && !S.players.some((p) => p.name.toLowerCase() === n.toLowerCase())) { S.players.push({ name: n, score: 0, names: [] }); setup(); $("#pn").focus(); }
+    else { i.value = ""; i.focus(); }
+  } else if (f === "guess") submit(false);
+});
+
+setup();
+</script>
+</body>
+</html>
