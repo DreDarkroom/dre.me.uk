@@ -1,0 +1,17 @@
+# Local production-like run. Mock payments need NODE_ENV=development, so this file runs in dev mode.
+# For real deploys set NODE_ENV=production + PAYMENT_PROVIDER=stripe (see README).
+services:
+  shop:
+    build: .
+    ports: ["3000:3000"]
+    environment:
+      NODE_ENV: development
+      BASE_URL: http://localhost:3000
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-me-locally}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-mock}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+    volumes: ["shopdata:/data"]
+    restart: unless-stopped
+volumes:
+  shopdata:
