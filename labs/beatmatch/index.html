@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beat Match</title>
+<meta name="description" content="A rhythm puzzle. Listen to the beat, then rebuild it step by step.">
+<meta name="robots" content="noindex">
+<style>
+:root{--ink:#050304;--red:#d1122b;--soft:#e8434f;--text:#eadede;--dim:#b09c9c;--line:#3a1a1f;--ok:#58c27d;--okbg:rgba(88,194,125,.28);--warn:#e6b84c}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--ink);color:var(--text);font:17px/1.5 ui-sans-serif,system-ui,"Segoe UI",sans-serif}
+body{background:radial-gradient(circle at 50% 120%,#1a0508,transparent 60%),var(--ink)}
+main{max-width:46rem;margin:0 auto;padding:1.5rem 1rem 3rem}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap}
+h1{margin:0;font-size:1.8rem;letter-spacing:-.02em}
+h2{margin:0 0 .4rem;font-size:1rem}
+a{color:var(--soft)}
+.sub{color:var(--dim);margin:.2rem 0 1rem}
+.how{border:1px solid var(--line);border-radius:.6rem;padding:.8rem 1rem;margin-bottom:1rem;background:rgba(255,255,255,.025)}
+.how ol{margin:0;padding-left:1.2rem;color:var(--dim)}
+.how li{margin:.15rem 0}
+.how b{color:var(--text)}
+.status{display:flex;gap:1rem;flex-wrap:wrap;color:var(--dim);font-size:.9rem;margin-bottom:.6rem}
+.status b{color:var(--text)}
+.meter{height:.5rem;border-radius:1rem;background:#1c0b0e;overflow:hidden;margin-bottom:1rem}
+.meter i{display:block;height:100%;width:0;background:var(--ok);transition:width .3s}
+.lane{display:grid;grid-template-columns:4.6rem 1fr;gap:.5rem;align-items:center;margin-bottom:.5rem}
+.lane span{font-weight:700;font-size:.85rem;color:var(--dim)}
+.lane.flag span{color:var(--warn)}
+.lane.flag span::after{content:" \2190 check";font-weight:400}
+.steps{display:grid;gap:.25rem;grid-template-columns:repeat(var(--n),1fr)}
+.pad{height:2.6rem;min-width:0;padding:0;border:1px solid var(--line);border-radius:.4rem;background:rgba(255,255,255,.03);cursor:pointer;color:inherit;touch-action:manipulation;transition:background .15s,border-color .15s}
+.pad.beat{border-color:#5a2a30}
+.pad[aria-pressed=true]{background:var(--red);border-color:var(--soft);box-shadow:0 0 12px rgba(209,18,43,.5)}
+.pad.now{outline:2px solid var(--text);outline-offset:1px}
+.pad.right{background:var(--ok)!important;border-color:#9be3b5!important;box-shadow:0 0 12px rgba(88,194,125,.55)!important}
+.pad.extra{background:transparent!important;border:2px dashed var(--soft)!important;box-shadow:none!important}
+.pad.extra::after{content:"\00d7";color:var(--soft);font-weight:700}
+.pad.hint{background:var(--okbg);border:2px solid var(--ok);animation:pulse 1s ease-in-out infinite}
+.pad.hintx{border:2px dashed var(--warn);animation:pulse 1s ease-in-out infinite}
+.pad.cleared{animation:wave .7s ease both;animation-delay:calc(var(--i)*35ms);background:var(--ok)!important;border-color:#9be3b5!important}
+.pad:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+@keyframes pulse{50%{transform:scale(1.07)}}
+@keyframes wave{0%{transform:scale(1)}40%{transform:scale(1.25);box-shadow:0 0 22px var(--ok)}100%{transform:scale(1)}}
+.bar{display:flex;gap:.5rem;flex-wrap:wrap;margin:1rem 0}
+button.btn{font:inherit;font-weight:600;padding:.7rem 1rem;min-height:2.75rem;border-radius:.6rem;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);cursor:pointer;touch-action:manipulation}
+button.btn:hover{border-color:var(--soft)}
+button.btn.main{border-color:var(--red);background:rgba(209,18,43,.2)}
+button.btn.go{border-color:var(--ok);background:var(--okbg)}
+button.btn:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+.msg{min-height:3rem;padding:.7rem 1rem;border:1px solid var(--line);border-radius:.6rem;color:var(--dim)}
+.msg.good{border-color:var(--ok);color:var(--text)}
+.msg.bad{border-color:var(--soft);color:var(--text)}
+.msg.tip{border-color:var(--warn);color:var(--text)}
+.help{color:var(--dim);font-size:.9rem;margin-top:1.2rem}
+#win{position:fixed;inset:0;z-index:6;display:grid;place-items:center;pointer-events:none;opacity:0}
+#win.show{animation:winfade 2.4s ease both}
+#win div{border:2px solid var(--ok);border-radius:1rem;background:rgba(5,3,4,.92);padding:1.2rem 2rem;text-align:center;box-shadow:0 0 60px rgba(88,194,125,.45);animation:pop .5s cubic-bezier(.2,1.6,.4,1) both}
+#win strong{display:block;font-size:2rem;color:var(--ok)}
+@keyframes winfade{0%{opacity:0}10%,80%{opacity:1}100%{opacity:0}}
+@keyframes pop{from{transform:scale(.4)}to{transform:scale(1)}}
+#start{position:fixed;inset:0;z-index:5;display:grid;place-items:center;background:var(--ink);padding:1rem;text-align:center}
+#start div{max-width:26rem}
+#start[hidden]{display:none}
+@media (max-width:560px){.steps.wide{grid-template-columns:repeat(8,1fr)}.lane{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation-duration:.01s!important;animation-iteration-count:1!important}}
+</style>
+</head>
+<body>
+<div id="start">
+  <div>
+    <h1>Beat Match</h1>
+    <p class="sub">A beat will play. Rebuild it by ear, step by step. Turn your sound on.</p>
+    <button class="btn main" id="go">Start</button>
+  </div>
+</div>
+<div id="win" aria-hidden="true"><div><strong>Correct!</strong><span id="winSub">Next level</span></div></div>
+<main>
+  <header>
+    <h1>Beat Match</h1>
+    <a href="../">Labs</a>
+  </header>
+  <p class="sub">Listen to the target beat, then switch on the same steps.</p>
+  <div class="how">
+    <h2>How to play</h2>
+    <ol>
+      <li>Press <b>Play target</b> and listen. It loops until you stop it.</li>
+      <li>Tap squares to switch drum hits on. Each row is a drum, and each square is a beat in the bar from left to right.</li>
+      <li>Press <b>Check</b>. <b style="color:var(--ok)">Green</b> squares are right. A <b style="color:var(--soft)">red dashed &times;</b> is a hit that shouldn't be there.</li>
+      <li>Stuck? Press <b>Hint</b>. Each press gives a bigger clue.</li>
+    </ol>
+  </div>
+  <div class="status" aria-live="polite">
+    <span>Level <b id="lvl">1</b> / <b id="lvlMax">1</b></span>
+    <span>Tempo <b id="bpm"></b> BPM</span>
+    <span>Correct <b id="okn">0</b> / <b id="tot">0</b></span>
+  </div>
+  <div class="meter" aria-hidden="true"><i id="fill"></i></div>
+  <div id="grid"></div>
+  <div class="bar">
+    <button class="btn main" id="target">Play target</button>
+    <button class="btn" id="mine">Play mine</button>
+    <button class="btn" id="stop">Stop</button>
+    <button class="btn go" id="check">Check</button>
+    <button class="btn" id="hint">Hint</button>
+    <button class="btn" id="clear">Clear</button>
+  </div>
+  <div class="msg" id="msg" role="status" aria-live="polite">Press Play target and listen closely.</div>
+  <p class="help">Headphones help with the hi-hats. The white outline shows where the beat is now.</p>
+</main>
+<script>
+const LANES = { K: "Kick", S: "Snare", H: "Hat" };
+const LEVELS = [
+  { bpm: 80,  K: "x.......", S: "....x..." },
+  { bpm: 90,  K: "x...x...", S: "..x...x." },
+  { bpm: 95,  K: "x..x..x.", S: "....x..." },
+  { bpm: 100, K: "x.......x.......", S: "....x.......x...", H: "x.x.x.x.x.x.x.x." },
+  { bpm: 105, K: "x..x..x...x.....", S: "....x.......x..x", H: "x.x.x.x.x.x.xxx." },
+  { bpm: 110, K: "x.x...x..x..x...", S: "....x..x....x...", H: "xxx.x.xxx.x.xx.x" },
+  { bpm: 120, K: "x..x..x.x..x.x..", S: "....x..x.x..x...", H: "x.xxx.x.xxx.x.xx" },
+];
+const $ = (id) => document.getElementById(id);
+let level = 0, hintStage = 0, locked = false, mine = {}, ctx = null, timer = null, playing = null, step = 0, nextT = 0;
+
+try { const s = +localStorage.getItem("beatmatch-level"); if (s >= 0 && s < LEVELS.length) level = s; } catch (e) {}
+
+const lanesOf = (l) => Object.keys(LANES).filter((k) => l[k]);
+const stepsOf = (l) => l[lanesOf(l)[0]].length;
+const want = (k, i) => LEVELS[level][k][i] === "x";
+const pad = (k, i) => document.querySelector(`.pad[data-k="${k}"][data-i="${i}"]`);
+const total = () => lanesOf(LEVELS[level]).reduce((a, k) => a + LEVELS[level][k].split("x").length - 1, 0);
+
+function build() {
+  const L = LEVELS[level], n = stepsOf(L);
+  mine = {}; hintStage = 0; locked = false;
+  const grid = $("grid"); grid.innerHTML = "";
+  lanesOf(L).forEach((k) => {
+    mine[k] = Array(n).fill(false);
+    const row = document.createElement("div"); row.className = "lane"; row.dataset.lane = k;
+    row.innerHTML = `<span>${LANES[k]}</span>`;
+    const steps = document.createElement("div"); steps.className = "steps" + (n > 8 ? " wide" : "");
+    steps.style.setProperty("--n", n);
+    for (let i = 0; i < n; i++) {
+      const b = document.createElement("button");
+      b.className = "pad" + (i % 4 === 0 ? " beat" : "");
+      b.dataset.k = k; b.dataset.i = i; b.style.setProperty("--i", i);
+      b.setAttribute("aria-pressed", "false");
+      b.setAttribute("aria-label", `${LANES[k]} step ${i + 1}`);
+      steps.appendChild(b);
+    }
+    row.appendChild(steps); grid.appendChild(row);
+  });
+  $("lvl").textContent = level + 1; $("lvlMax").textContent = LEVELS.length;
+  $("bpm").textContent = L.bpm; $("tot").textContent = total();
+  progress(false);
+}
+
+function clearMarks() {
+  document.querySelectorAll(".pad").forEach((p) => p.classList.remove("right", "extra", "hint", "hintx"));
+  document.querySelectorAll(".lane").forEach((l) => l.classList.remove("flag"));
+}
+// green = correct hits so far; used by Check and by the meter
+function progress(mark) {
+  const L = LEVELS[level]; let ok = 0, extra = 0;
+  lanesOf(L).forEach((k) => mine[k].forEach((on, i) => {
+    if (!on) return;
+    if (want(k, i)) { ok++; if (mark) pad(k, i).classList.add("right"); }
+    else { extra++; if (mark) pad(k, i).classList.add("extra"); }
+  }));
+  $("okn").textContent = ok;
+  $("fill").style.width = (100 * ok / total()) + "%";
+  return { ok, extra, missing: total() - ok };
+}
+
+$("grid").addEventListener("click", (e) => {
+  const b = e.target.closest(".pad"); if (!b || locked) return;
+  const k = b.dataset.k, i = +b.dataset.i;
+  mine[k][i] = !mine[k][i];
+  b.setAttribute("aria-pressed", mine[k][i]);
+  b.classList.remove("right", "extra", "hint", "hintx");
+  progress(false);
+  if (ctx) voice(k, ctx.currentTime);
+});
+
+function say(t, c) { const m = $("msg"); m.textContent = t; m.className = "msg " + (c || ""); }
+
+// ---- audio ----
+let noiseBuf = null;
+function ensureCtx() {
+  if (!ctx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) { say("Sorry, this browser has no Web Audio support."); return false; }
+    ctx = new AC();
+    noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  if (ctx.state === "suspended") ctx.resume();
+  return true;
+}
+function noise(t, dur, type, freq, gain) {
+  const s = ctx.createBufferSource(); s.buffer = noiseBuf;
+  const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq;
+  const g = ctx.createGain(); g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+  s.connect(f); f.connect(g); g.connect(ctx.destination); s.start(t); s.stop(t + dur);
+}
+function voice(k, t) {
+  if (k === "K") {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(40, t + .12);
+    g.gain.setValueAtTime(1, t); g.gain.exponentialRampToValueAtTime(.001, t + .3);
+    o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + .32);
+  } else if (k === "S") {
+    noise(t, .18, "highpass", 1500, .7);
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = "triangle"; o.frequency.value = 190;
+    g.gain.setValueAtTime(.5, t); g.gain.exponentialRampToValueAtTime(.001, t + .12);
+    o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + .14);
+  } else {
+    noise(t, .05, "highpass", 7000, .35);
+  }
+}
+// a single bell strike, under a second
+function ding() {
+  if (!ctx) return;
+  const t = ctx.currentTime;
+  [[1318.5, .5, .85], [1318.5 * 2.76, .22, .45], [1318.5 * 5.4, .08, .2]].forEach(([f, peak, dur]) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = "sine"; o.frequency.value = f;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + .004);
+    g.gain.exponentialRampToValueAtTime(.001, t + dur);
+    o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + dur + .02);
+  });
+}
+
+function tick() {
+  const p = playing; if (!p) return;
+  const L = LEVELS[level], n = stepsOf(L), dur = 60 / L.bpm / 4;
+  while (nextT < ctx.currentTime + .12) {
+    lanesOf(L).forEach((k) => {
+      const on = p === "target" ? want(k, step) : mine[k][step];
+      if (on) voice(k, nextT);
+    });
+    const s = step, delay = Math.max(0, (nextT - ctx.currentTime) * 1000);
+    setTimeout(() => flash(s), delay);
+    step = (step + 1) % n; nextT += dur;
+  }
+}
+function flash(s) {
+  document.querySelectorAll(".pad.now").forEach((p) => p.classList.remove("now"));
+  if (!playing) return;
+  document.querySelectorAll(`.pad[data-i="${s}"]`).forEach((p) => p.classList.add("now"));
+}
+function play(what) {
+  if (!ensureCtx()) return;
+  stop();
+  playing = what; step = 0; nextT = ctx.currentTime + .08;
+  timer = setInterval(tick, 25); tick();
+  say(what === "target" ? "Playing the target. Rebuild it in the grid below." : "Playing your pattern. Does it sound like the target?");
+}
+function stop() { playing = null; clearInterval(timer); timer = null; flash(-1); }
+
+// ---- game ----
+function check() {
+  if (locked) return;
+  clearMarks();
+  const r = progress(true);
+  if (r.extra === 0 && r.missing === 0) return win();
+  const bits = [];
+  if (r.extra) bits.push(`${r.extra} hit${r.extra === 1 ? " is" : "s are"} not in the target (red dashed)`);
+  if (r.missing) bits.push(`${r.missing} hit${r.missing === 1 ? " is" : "s are"} still missing`);
+  say(`${r.ok} of ${total()} correct. ${bits.join(" and ")}.`, "bad");
+}
+function win() {
+  locked = true; stop(); ensureCtx(); ding();
+  document.querySelectorAll('.pad[aria-pressed="true"]').forEach((p) => { p.classList.remove("right"); p.classList.add("cleared"); });
+  const last = level === LEVELS.length - 1;
+  $("winSub").textContent = last ? "All levels cleared. Back to level 1" : `Level ${level + 2} next`;
+  const w = $("win"); w.classList.remove("show"); void w.offsetWidth; w.classList.add("show");
+  say(last ? "That's every level. Starting again from level 1." : "Spot on! Loading the next level.", "good");
+  const next = (level + 1) % LEVELS.length;
+  setTimeout(() => {
+    level = next; try { localStorage.setItem("beatmatch-level", level); } catch (e) {}
+    w.classList.remove("show"); build(); say("New beat. Press Play target.");
+  }, 2400);
+}
+// each press gives a bigger clue
+function hint() {
+  if (locked) return;
+  const L = LEVELS[level]; clearMarks();
+  const r = progress(false);
+  if (r.extra === 0 && r.missing === 0) { say("Everything matches. Press Check.", "good"); return; }
+  hintStage++;
+  if (hintStage === 1) {
+    const counts = lanesOf(L).map((k) => `${LANES[k]} ${L[k].split("x").length - 1}`).join(", ");
+    say(`Hint 1: how many hits each drum has: ${counts}. Count yours.`, "tip");
+  } else if (hintStage === 2) {
+    const bad = lanesOf(L).map((k) => [k, L[k].split("").filter((c, i) => (c === "x") !== mine[k][i]).length]).sort((a, b) => b[1] - a[1])[0];
+    document.querySelector(`.lane[data-lane="${bad[0]}"]`).classList.add("flag");
+    say(`Hint 2: the ${LANES[bad[0]].toLowerCase()} row has the most mistakes. Listen to just that drum in the target.`, "tip");
+  } else {
+    const missing = [], extra = [];
+    lanesOf(L).forEach((k) => L[k].split("").forEach((c, i) => {
+      if (c === "x" && !mine[k][i]) missing.push([k, i]);
+      if (c !== "x" && mine[k][i]) extra.push([k, i]);
+    }));
+    const pickFrom = missing.length ? missing : extra;
+    const [k, i] = pickFrom[Math.floor(Math.random() * pickFrom.length)];
+    if (missing.length) { pad(k, i).classList.add("hint"); say(`Hint ${hintStage}: switch on the glowing green square (${LANES[k].toLowerCase()}, step ${i + 1}).`, "tip"); }
+    else { pad(k, i).classList.add("hintx"); say(`Hint ${hintStage}: switch off the dashed square (${LANES[k].toLowerCase()}, step ${i + 1}).`, "tip"); }
+  }
+}
+
+$("go").onclick = () => { if (ensureCtx()) $("start").hidden = true; };
+$("target").onclick = () => play("target");
+$("mine").onclick = () => play("mine");
+$("stop").onclick = () => { stop(); say("Stopped."); };
+$("check").onclick = check;
+$("hint").onclick = hint;
+$("clear").onclick = () => {
+  if (locked) return;
+  document.querySelectorAll(".pad").forEach((p) => p.setAttribute("aria-pressed", "false"));
+  clearMarks(); Object.keys(mine).forEach((k) => mine[k].fill(false)); progress(false);
+};
+document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); });
+build();
+</script>
+</body>
+</html>
