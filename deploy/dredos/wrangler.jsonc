@@ -1,0 +1,10 @@
+// DreDOS: static Worker. Serves ../../dredos at dredos.dre.me.uk only.
+// Deploy from the repo root:  npx wrangler@4 deploy -c deploy/dredos/wrangler.jsonc
+{
+  "name": "dredos",
+  "compatibility_date": "2026-10-01",
+  "assets": { "directory": "../../dredos" },
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "dredos.dre.me.uk", "custom_domain": true }]
+}
