@@ -1,6 +1,6 @@
 # DazzleDre//\DreDazzle: Mallard Protocol
 
-**DazzleDre//\DreDazzle** is Dre's wider creative universe: experimental audiovisual toys, games and tools made with AI collaborators under human direction. Repository slug: `DazzleDre-DreDazzle`.
+**DazzleDre//\DreDazzle** (short name **Daz**) is Dre's wider creative universe: experimental audiovisual toys, games and tools made with AI collaborators under human direction. Repository slug: `DazzleDre-DreDazzle`. Planned address: dazzle.dredarkroom.com. See `ROADMAP.md` for naming, domain and short-link plans.
 
 **Mallard Protocol** is the first experiment inside it. It is not the name of the whole repository.
 

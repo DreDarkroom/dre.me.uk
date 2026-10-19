@@ -55,6 +55,13 @@ Built at Dre's request as the recommended next milestone (and a workaround for t
 - **Verified (headless Chromium):** 4.7 s test recording, 1.5 MB, WebM (VP9 + Opus); audio decoded and non-silent (RMS 0.146); video 412 x 860; captions and dial appear in the recording; second recording works; no page errors; audio peaks and the full journey regression unchanged.
 - **Not verified:** real devices, Safari or iPhone, Save behaviour in Dre's browser, that OBS capture is no longer needed, the robot's voice line (not captured: browser speech is outside the Web Audio graph).
 
+## 2026-10-19: names, domain, Cloudflare probe, AI briefing pack
+- Dre chose: universe **DazzleDre//\DreDazzle**, short name **Daz**, slug `DazzleDre-DreDazzle`, domain **dazzle.dredarkroom.com**, planned Dub short link `dre.me.uk/daz`. Words to use later: stellar, discombobulated, transmogrify. Recorded in `ROADMAP.md`.
+- **Cloudflare probe (read-only):** about 15 Workers exist. `dre-front-door` code read: `/` is served from a Pages landing project, `/_/posts.json` returns blog posts, all other paths pass through to Dub. No Worker named `dazzledre`, `dre-labs` or `dredos` exists. No DNS or zone tools are available, so zone ownership of `dredarkroom.com` and existing DNS records are unknown.
+- **Deploy config** moved from `deploy/labs` (labs.dre.me.uk) to `deploy/dazzle` (dazzle.dredarkroom.com). Dry run clean. Not deployed.
+- **AI briefing pack** written to `docs/dazzledre/AI-PACK.md` (shared context, handoff protocol, tasks for ChatGPT as orchestrator, Gemini, Dola, Jules (about 3 hours) and an optional Antigravity prompt). Placed outside `labs/` so a labs deployment does not publish it.
+- **Not possible from here:** setting up Antigravity (a separate Google IDE with no connection to this session), contacting other AIs, DNS or Dub changes.
+
 ## Known blockers
 See `README.md`. In short: no verified deployment, OBS audio capture, no DNS/Cloudflare access for the AI session, logo and photos not retrievable, no playtest notes.
 
