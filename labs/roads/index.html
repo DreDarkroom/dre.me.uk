@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beat Match Roads</title>
+<meta name="description" content="A rhythm journey with forks in the road. Learn grooves by ear, build them by hand.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Rubik+Mono+One&display=swap">
+<style>
+/* Darkroom at night: red safelight, grain, spray paint. Colours are oklch so lanes stay equally bright. */
+@property --h{syntax:"<number>";inherits:true;initial-value:350}
+:root{--h:350;--ink:#07040a;--text:#f4ecee;--dim:#b9a9b4;--card:rgba(10,5,14,.74);--line:rgba(255,255,255,.14);
+--kc:oklch(.68 .27 355);--sc:oklch(.82 .15 205);--hc:oklch(.88 .18 100);--ok:oklch(.82 .2 150);--warn:oklch(.82 .17 70);--bad:oklch(.7 .24 25);
+--acc:oklch(.72 .25 var(--h));--dev:.15;animation:drift 40s linear infinite}
+@keyframes drift{to{--h:710}}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--ink);color:var(--text);font:17px/1.5 "DM Sans",ui-sans-serif,system-ui,"Segoe UI",sans-serif}
+#art,#paint,#grain{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+#art{filter:saturate(var(--dev)) contrast(1.1);transition:filter 1.6s}
+#paint{opacity:.9}
+#grain{opacity:.22;mix-blend-mode:overlay;background-size:128px 128px;animation:grain .8s steps(5) infinite}
+@keyframes grain{20%{background-position:30px -40px}40%{background-position:-50px 20px}60%{background-position:10px 60px}80%{background-position:-20px -70px}}
+main{position:relative;z-index:2;max-width:48rem;margin:0 auto;padding:1rem max(1rem,env(safe-area-inset-left)) 3rem}
+header{display:flex;justify-content:space-between;align-items:center;gap:.8rem;flex-wrap:wrap;margin-bottom:.8rem}
+h1{margin:0;font-family:"Rubik Mono One","Arial Black",system-ui,sans-serif;font-weight:400;font-size:1.5rem;letter-spacing:.02em;background:linear-gradient(90deg,var(--acc),oklch(.85 .2 calc(var(--h) + 90)),var(--acc));-webkit-background-clip:text;background-clip:text;color:transparent}
+.chips{display:flex;gap:.4rem;flex-wrap:wrap;font-size:.8rem}
+.chip{border:1px solid var(--line);border-radius:2rem;padding:.15rem .7rem;background:var(--card);color:var(--dim);cursor:default}
+.chip b{color:var(--text)}
+button.chip{cursor:pointer;font:inherit;font-size:.8rem}
+.xp{height:.45rem;border-radius:1rem;background:rgba(255,255,255,.1);overflow:hidden;margin-bottom:.8rem}
+.xp i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--kc),var(--hc));transition:width .6s}
+#screen{background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:1rem;padding:1.1rem;min-height:22rem}
+h2{margin:0 0 .2rem;font-size:1.4rem;letter-spacing:-.01em}
+.kick{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);font-weight:700}
+.learn{margin:.5rem 0 1rem;color:var(--dim)}
+.learn b{color:var(--text)}
+.row{display:grid;grid-template-columns:4.4rem 1fr;gap:.5rem;align-items:center;margin-bottom:.45rem}
+.row>span{font-weight:700;font-size:.8rem}
+.row[data-k=K]>span{color:var(--kc)}.row[data-k=S]>span{color:var(--sc)}.row[data-k=H]>span{color:var(--hc)}
+.row.flag>span::after{content:" \2190";color:var(--warn)}
+.steps{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:.22rem}
+.count{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:.22rem;margin:0 0 .3rem 4.9rem;font-size:.72rem;color:var(--dim);text-align:center}
+.count i{font-style:normal}.count i.big{color:var(--text);font-weight:700}
+.pad{--c:var(--kc);height:2.7rem;min-width:0;padding:0;border:1px solid var(--line);border-radius:.45rem;background:rgba(255,255,255,.04);cursor:pointer;color:inherit;touch-action:manipulation;position:relative;transition:background .15s,transform .15s}
+.row[data-k=S] .pad{--c:var(--sc)}.row[data-k=H] .pad{--c:var(--hc)}
+.pad.band{background:rgba(255,255,255,.085)}
+.pad[aria-pressed=true]{background:var(--c);border-color:#fff;box-shadow:0 0 14px var(--c);transform:rotate(calc(var(--r,0)*1deg))}
+.pad::before{content:attr(data-c);position:absolute;top:2px;left:0;right:0;font-size:.58rem;line-height:1;color:var(--dim);text-align:center;pointer-events:none}
+.pad[aria-pressed=true]::before{color:#150a12}
+.pad.now{outline:2px solid #fff;outline-offset:1px}
+.pad.ghost::after{content:"";position:absolute;inset:36%;border-radius:50%;background:var(--c);opacity:.5}
+.pad.right{box-shadow:0 0 0 3px var(--ok),0 0 18px var(--ok)!important}
+.pad.extra,.pad.near{background:transparent!important;border:2px dashed var(--bad)!important;box-shadow:none!important}
+.pad.near{border-color:var(--warn)!important}
+.pad.extra::after,.pad.near::after{content:"\00d7";font-weight:700;color:var(--bad);position:absolute;inset:0;display:grid;place-items:center}
+.pad.near::after{color:var(--warn)}
+.pad.hint{outline:3px solid var(--ok);animation:pulse 1s ease-in-out infinite}
+.pad.hintx{outline:3px dashed var(--warn);animation:pulse 1s ease-in-out infinite}
+.pad.cleared{animation:wave .8s ease both;animation-delay:calc(var(--i)*40ms)}
+@keyframes pulse{50%{transform:scale(1.08)}}
+@keyframes wave{40%{transform:scale(1.3) rotate(8deg);box-shadow:0 0 26px #fff}}
+.bar{display:flex;gap:.45rem;flex-wrap:wrap;margin:1rem 0}
+.btn{font:inherit;font-weight:600;padding:.65rem 1rem;min-height:2.75rem;border-radius:.7rem;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--text);cursor:pointer;touch-action:manipulation}
+.btn:hover{border-color:var(--acc)}
+.btn.main{border-color:var(--acc);background:color-mix(in oklch,var(--acc) 28%,transparent)}
+.btn.go{border-color:var(--ok);background:color-mix(in oklch,var(--ok) 22%,transparent)}
+.btn[aria-pressed=true]{border-color:var(--hc);background:color-mix(in oklch,var(--hc) 24%,transparent)}
+.btn:focus-visible,.pad:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.msg{min-height:3rem;padding:.7rem 1rem;border:1px solid var(--line);border-radius:.7rem;color:var(--dim)}
+.msg.good{border-color:var(--ok);color:var(--text)}.msg.bad{border-color:var(--bad);color:var(--text)}.msg.tip{border-color:var(--warn);color:var(--text)}
+.status{display:flex;gap:1rem;flex-wrap:wrap;color:var(--dim);font-size:.85rem;margin-bottom:.8rem}
+.status b{color:var(--text)}
+.ab{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin:1rem 0}
+.ab .btn{min-height:4.2rem;font-size:1.1rem}
+.ab .btn.A{border-color:var(--kc)}.ab .btn.B{border-color:var(--sc)}
+.ab .btn.on{box-shadow:0 0 22px currentColor}
+.ref{width:100%;margin-bottom:.4rem}
+.forks{display:grid;gap:.7rem;margin:1rem 0}
+.fork{display:block;text-align:left;font:inherit;color:var(--text);cursor:pointer;border:1px solid var(--line);border-radius:.9rem;padding:1rem 1.1rem;background:linear-gradient(120deg,color-mix(in oklch,oklch(.6 .25 var(--fh)) 38%,transparent),rgba(255,255,255,.03));transition:transform .2s,border-color .2s}
+.fork:hover,.fork:focus-visible{transform:translateY(-3px) rotate(-.4deg);border-color:oklch(.8 .2 var(--fh));outline:none}
+.fork b{display:block;font-size:1.15rem}.fork small{color:var(--dim)}
+.stickers{display:flex;flex-wrap:wrap;gap:.5rem;margin:1rem 0 0}
+.stk{--sh:350;font:700 .72rem/1 "Rubik Mono One",system-ui,sans-serif;padding:.55rem .75rem;border-radius:46% 54% 40% 60%/55% 45% 55% 45%;background:oklch(.78 .2 var(--sh));color:#150a12;border:3px solid #fff;transform:rotate(var(--sr));box-shadow:2px 3px 0 rgba(0,0,0,.5);animation:stick .5s cubic-bezier(.2,1.8,.4,1) both}
+@keyframes stick{from{transform:scale(2.4) rotate(calc(var(--sr)*3));opacity:0}}
+.trail{display:flex;gap:.3rem;align-items:center;margin-top:1rem;flex-wrap:wrap}
+.trail i{width:.7rem;height:.7rem;border-radius:50%;background:oklch(.75 .2 var(--th));display:block}
+.trail span{color:var(--dim);font-size:.75rem;margin-right:.3rem}
+details{margin-top:1rem;color:var(--dim);font-size:.9rem}
+summary{cursor:pointer;color:var(--text)}
+details a{color:var(--acc)}
+.sel{font:inherit;color:var(--text);background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:.7rem;padding:.6rem .8rem;min-height:2.75rem}
+.sel option{color:#000}
+#win{position:fixed;inset:0;z-index:6;display:grid;place-items:center;pointer-events:none;opacity:0}
+#win.show{animation:winfade 2.2s ease both}
+#win div{border:3px solid #fff;border-radius:1.2rem;background:oklch(.78 .2 var(--h));color:#150a12;padding:1.1rem 2.2rem;text-align:center;transform:rotate(-3deg);box-shadow:6px 8px 0 rgba(0,0,0,.6);animation:pop .55s cubic-bezier(.2,1.7,.4,1) both}
+#win strong{display:block;font:400 2rem "Rubik Mono One","Arial Black",system-ui,sans-serif}
+@keyframes winfade{0%{opacity:0}10%,78%{opacity:1}100%{opacity:0}}
+@keyframes pop{from{transform:scale(.3) rotate(12deg)}}
+#start{position:fixed;inset:0;z-index:7;background:#1a0306;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;padding:1rem;text-align:center;touch-action:none}
+#start[hidden]{display:none}
+#start h1{font-size:2.2rem}
+#start p{max-width:26rem;margin:0;color:var(--dim)}
+#scrib{width:min(92vw,26rem);height:34vh;border:2px dashed var(--soft,#e8434f);border-radius:1rem;background:rgba(255,255,255,.03);touch-action:none}
+#seedshow{font:.8rem ui-monospace,Consolas,monospace;color:var(--hc);min-height:1.2rem}
+@media (max-width:560px){.steps.wide{grid-template-columns:repeat(8,1fr)}.count.wide{display:none}.row{grid-template-columns:1fr}.count{margin-left:0}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important;transition:none!important}}
+</style>
+</head>
+<body>
+<canvas id="art"></canvas><canvas id="paint"></canvas><div id="grain"></div>
+<div id="start">
+  <h1>Beat Match Roads</h1>
+  <p>Scribble anything below. The way your hand moves becomes the seed for every random choice in this game. Then press Start.</p>
+  <canvas id="scrib" aria-label="Scribble area"></canvas>
+  <div id="seedshow">hand seed: waiting for your scribble</div>
+  <button class="btn main" id="go">Start the journey</button>
+</div>
+<div id="win" aria-hidden="true"><div><strong id="winT">Yes!</strong><span id="winS"></span></div></div>
+<main>
+  <header>
+    <h1>Roads</h1>
+    <div class="chips">
+      <span class="chip">Rank <b id="rank">Roadie</b></span>
+      <span class="chip">XP <b id="xpn">0</b></span>
+      <span class="chip" title="Made from how your hand moved">Seed <b id="seedn">----</b></span>
+      <button class="chip" id="mute" aria-pressed="false">Sound on</button>
+    </div>
+  </header>
+  <div class="xp" aria-hidden="true"><i id="xpbar"></i></div>
+  <section id="screen" aria-live="polite"></section>
+  <div class="stickers" id="stickers" aria-label="Sticker book"></div>
+  <div class="trail" id="trail"></div>
+  <details>
+    <summary>Why hands, not dice?</summary>
+    <p>Nothing a human does is truly random. People asked to make up a random sequence avoid repeating themselves (Wagenaar, 1972, <i>Psychological Bulletin</i> 77, 65&ndash;72), and the tiny timing wobbles in real playing are not white noise either: in <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3202537" rel="noopener">Hennig et al. (2011, PLoS ONE)</a> they had long-range correlations, and listeners preferred that to plain random jitter.</p>
+    <p>So this game avoids plain dice. The seed comes from your scribble. "Hand dice" avoid repeats the way people do. "Human feel" drifts the timing in a correlated way, then you can hear the difference against white-noise jitter.</p>
+  </details>
+  <p class="learn"><a href="../" style="color:var(--acc)">Labs</a> &middot; <a href="../beatmatch/" style="color:var(--acc)">Compare with the first Beat Match</a></p>
+</main>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const LANES = { K: "Kick", S: "Snare", H: "Hat" };
+const SP = (o) => Object.assign({ bpm: 100, steps: 8, swing: .5, human: "none", duck: false, pad: false }, o);
+const lanesOf = (s) => Object.keys(LANES).filter((k) => s[k]);
+const countLabels = (n) => n === 8 ? "1 & 2 & 3 & 4 &".split(" ") : "1 e & a 2 e & a 3 e & a 4 e & a".split(" ");
+const hits = (p) => (p.match(/x/g) || []).length;
+
+// ---------- the road map ----------
+const NODES = {
+  pulse: { type: "build", title: "The Pulse", sticker: "PULSE", hue: 20, blurb: "Start with the heartbeat.",
+    learn: "<b>The kick is the pulse.</b> A bar of 4/4 has four beats, counted 1 2 3 4. These eight steps are eighth notes: <b>1 &amp; 2 &amp; 3 &amp; 4 &amp;</b>. Put the kick on beats <b>1</b> and <b>3</b>.",
+    spec: SP({ bpm: 84, K: "x...x..." }), next: ["back", "off"] },
+  back: { type: "build", title: "Backbeat Road", sticker: "BACKBEAT", hue: 330, blurb: "Snare on 2 and 4. Rock, funk, pop.",
+    learn: "<b>The backbeat</b> is the snare on beats <b>2</b> and <b>4</b>. It is the clap your head nods to in funk, rock and pop.",
+    spec: SP({ bpm: 92, K: "x...x...", S: "..x...x." }), next: ["spot"] },
+  off: { type: "build", title: "Offbeat Road", sticker: "OFFBEAT", hue: 190, blurb: "Hats on the ands. Dub and house.",
+    learn: "<b>Offbeat hats</b> sit on the <b>&amp;</b> between beats. They fill the gaps and push the groove forward.",
+    spec: SP({ bpm: 92, K: "x...x...", H: ".x.x.x.x" }), next: ["spot"] },
+  spot: { type: "ear", mode: "match", title: "Spot the Shift", sticker: "EAR", hue: 120, blurb: "Ear training: which one is the original?",
+    learn: "<b>A/B listening</b> is a producer's main tool: hear two versions, hear what changed. Listen for where a hit lands.",
+    spec: SP({ bpm: 92, K: "x...x...", S: "..x...x.", H: ".x.x.x.x" }), q: "One of these matches the reference. Which?", ref: true, next: ["swing", "duck"] },
+  swing: { type: "ear", mode: "swing", title: "Swing Road", sticker: "SWING", hue: 55, blurb: "Lazy, bouncy timing.",
+    learn: "<b>Swing</b> delays every second subdivision so the beat leans and bounces. 50% is straight, around 66% is triplet swing.",
+    spec: SP({ bpm: 96, steps: 16, K: "x...x...x...x...", S: "....x.......x...", H: "x.x.x.x.x.x.x.x." }), q: "Which one swings?", next: ["house"] },
+  duck: { type: "ear", mode: "duck", title: "Sidechain Road", sticker: "DUCK", hue: 275, blurb: "The pad ducks when the kick hits.",
+    learn: "<b>Sidechain compression</b> turns one sound down every time another plays, usually a pad or bass under the kick. It makes room for the kick and gives dance music its pump.",
+    spec: SP({ bpm: 122, steps: 16, pad: true, K: "x...x...x...x...", H: "..x...x...x...x." }), q: "Which one has the pad ducking under the kick?", next: ["house"] },
+  house: { type: "build", title: "Four on the Floor", sticker: "4/4 FLOOR", hue: 300, blurb: "The club standard.",
+    learn: "<b>Four on the floor</b>: kick on every beat, clap or snare on <b>2</b> and <b>4</b>, hats on the offbeats. House music usually sits around 120&ndash;128 BPM.",
+    spec: SP({ bpm: 122, steps: 16, K: "x...x...x...x...", S: "....x.......x...", H: "..x...x...x...x." }), next: ["sync"] },
+  sync: { type: "build", title: "Syncopation Boss", sticker: "SYNCOPATE", hue: 15, blurb: "Hits where you don't expect them.",
+    learn: "<b>Syncopation</b> puts hits on weak spots between the beats so the rhythm surprises you. The kick here plays a <b>3+3+2</b> grouping, the pattern behind a lot of Latin and electronic grooves.",
+    spec: SP({ bpm: 108, steps: 16, K: "x..x..x...x.x...", S: "....x.......x...", H: "x.x.x.x.x.x.x.x." }), next: ["taste"] },
+  taste: { type: "ear", mode: "taste", title: "Make It Human", sticker: "ALIVE", hue: 160, blurb: "No right answer. Trust your ears.",
+    learn: "<b>Humanise</b> nudges each hit by a few milliseconds. In a 2011 study listeners preferred timing drift with long-range correlation, like real players, over plain random jitter.",
+    spec: SP({ bpm: 100, steps: 16, K: "x...x...x..xx...", S: "....x.......x...", H: "x.x.x.x.x.x.x.xx" }), q: "Which one feels more alive?", next: ["jam"] },
+  jam: { type: "jam", title: "Open Jam", sticker: "JAM", hue: 85, blurb: "Everything unlocked.", learn: "<b>Constrained randomness</b> is how a lot of generative music works: rules decide what is allowed, chance picks from it. Hand dice follow the rules of the bar, and avoid repeating themselves.",
+    spec: SP({ bpm: 112, steps: 16, K: "x...............", S: "................", H: "................" }), next: [] },
+};
+const RANKS = [[0, "Roadie"], [150, "Selector"], [400, "Crate Digger"], [800, "Resident"], [1300, "Headliner"]];
+
+// ---------- state ----------
+let S = { xp: 0, stickers: [], node: "pulse", trail: [], seed: 0 };
+try { const o = JSON.parse(localStorage.getItem("roads-v1")); if (o && NODES[o.node]) S = Object.assign(S, o); } catch (e) {}
+const save = () => { try { localStorage.setItem("roads-v1", JSON.stringify(S)); } catch (e) {} };
+
+// ---------- seeded randomness ----------
+function hash32(h, v) { h ^= v | 0; h = Math.imul(h, 16777619); return (h ^ (h >>> 13)) >>> 0; }
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const strHash = (s) => { let h = 2166136261; for (const c of s) h = hash32(h, c.charCodeAt(0)); return h; };
+let draws = 0;
+const rngFor = (label) => mulberry((S.seed ^ strHash(label) ^ Math.imul(++draws, 2654435761)) >>> 0);
+// 1/f-style noise (Voss-McCartney). Offsets in ms are scaled so white and pink have the same spread.
+function pinkGen(rng) { const rows = [0, 0, 0, 0, 0]; let c = 0; return () => { c++; let n = c, r = 0; while (!(n & 1) && r < 4) { n >>= 1; r++; } rows[r] = rng() * 2 - 1; return (rows.reduce((a, b) => a + b, 0) + (rng() * 2 - 1)) / 6; }; }
+
+// ---------- audio ----------
+let ctx = null, master = null, analyser = null, noiseBuf = null, muted = false, cur = null, level = 0, padRig = null;
+function audioInit() {
+  if (!ctx) {
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
+    ctx = new AC(); master = ctx.createGain(); master.gain.value = .9;
+    analyser = ctx.createAnalyser(); analyser.fftSize = 512;
+    master.connect(analyser); analyser.connect(ctx.destination);
+    noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  if (ctx.state === "suspended") ctx.resume();
+  return true;
+}
+function noise(t, dur, type, freq, gain) {
+  const s = ctx.createBufferSource(); s.buffer = noiseBuf;
+  const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq;
+  const g = ctx.createGain(); g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+  s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t + dur);
+}
+function osc(t, type, f0, f1, dur, gain) {
+  const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type;
+  o.frequency.setValueAtTime(f0, t); if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur * .4);
+  g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+  o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + .02);
+}
+function voice(k, t, v = 1) {
+  if (k === "K") osc(t, "sine", 150, 40, .32, v);
+  else if (k === "S") { noise(t, .18, "highpass", 1500, .7 * v); osc(t, "triangle", 190, 0, .12, .5 * v); }
+  else noise(t, .05, "highpass", 7000, .35 * v);
+}
+function ding() {
+  if (!ctx || muted) return; const t = ctx.currentTime;
+  [[1318.5, .5, .85], [1318.5 * 2.76, .22, .45], [1318.5 * 5.4, .08, .2]].forEach(([f, p, d]) => {
+    const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = f;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(p, t + .004); g.gain.exponentialRampToValueAtTime(.001, t + d);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + d + .02);
+  });
+}
+function startPad(spec) {
+  const g = ctx.createGain(); g.gain.value = .2; const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 900;
+  const oscs = [110, 130.81, 164.81].map((fr) => { const o = ctx.createOscillator(); o.type = "sawtooth"; o.frequency.value = fr; o.detune.value = (Math.random() - .5) * 10; o.connect(f); o.start(); return o; });
+  f.connect(g); g.connect(master); padRig = { g, oscs };
+}
+function stopPad() { if (!padRig) return; const { g, oscs } = padRig; g.gain.setTargetAtTime(0, ctx.currentTime, .05); oscs.forEach((o) => o.stop(ctx.currentTime + .3)); padRig = null; }
+// spec: pattern + bpm + swing + human feel + sidechain. get(k,i) lets build screens play the player's own grid.
+function play(spec, get, tag) {
+  if (!audioInit() || muted) return; stop();
+  cur = { spec, get, tag, step: 0, nextT: ctx.currentTime + .08, rng: mulberry((S.seed ^ 77) >>> 0) };
+  cur.pink = pinkGen(cur.rng);
+  if (spec.pad) startPad(spec);
+  cur.timer = setInterval(tick, 25); tick();
+}
+function stop() {
+  if (!cur) return; clearInterval(cur.timer); cur = null; stopPad(); flash(-1);
+}
+function tick() {
+  const c = cur; if (!c) return; const sp = c.spec, n = sp.steps, dur = 240 / sp.bpm / n;
+  while (c.nextT < ctx.currentTime + .12) {
+    const i = c.step;
+    let t = c.nextT + (i % 2 ? (sp.swing - .5) * 2 * dur : 0);
+    if (sp.human === "white") t += (c.rng() * 2 - 1) * .010; else if (sp.human === "pink") t += c.pink() * .025;
+    t = Math.max(t, ctx.currentTime + .005);
+    lanesOf(sp).forEach((k) => {
+      if (!c.get(k, i)) return;
+      voice(k, t, sp.human !== "none" ? .85 + c.rng() * .25 : 1);
+      if (k === "K" && sp.duck && padRig) { padRig.g.gain.setTargetAtTime(.02, t, .006); padRig.g.gain.setTargetAtTime(.2, t + .07, .09); }
+    });
+    const d = Math.max(0, (c.nextT - ctx.currentTime) * 1000); setTimeout(() => flash(i), d);
+    c.step = (i + 1) % n; c.nextT += dur;
+  }
+}
+function flash(i) {
+  document.querySelectorAll(".pad.now").forEach((p) => p.classList.remove("now"));
+  if (!cur || i < 0) return;
+  document.querySelectorAll(`.pad[data-i="${i}"]`).forEach((p) => p.classList.add("now"));
+}
+
+// ---------- generative art ----------
+const art = $("art"), actx = art.getContext("2d"), paint = $("paint"), pctx = paint.getContext("2d");
+let AW = 0, AH = 0, roadHue = 350, blobs = [], T0 = performance.now();
+function sizeArt() {
+  AW = art.width = Math.ceil(innerWidth / 2); AH = art.height = Math.ceil(innerHeight / 2);
+  paint.width = innerWidth; paint.height = innerHeight;
+}
+function seedArt() {
+  const r = mulberry(S.seed || 1); blobs = Array.from({ length: 9 }, (_, i) => ({ fx: .3 + r() * .9, fy: .3 + r() * .9, ph: r() * 6.28, rx: .2 + r() * .3, ry: .2 + r() * .3, hu: i * 38 + r() * 20, sz: .5 + r() }));
+}
+function frame(now) {
+  const t = (now - T0) / 1000;
+  if (analyser) { const d = new Uint8Array(analyser.fftSize); analyser.getByteTimeDomainData(d); let s = 0; for (let i = 0; i < d.length; i++) { const v = (d[i] - 128) / 128; s += v * v; } level += (Math.sqrt(s / d.length) - level) * .3; } else level *= .95;
+  const sp = reduce ? .15 : 1;
+  actx.globalCompositeOperation = "source-over"; actx.fillStyle = "rgba(7,4,10,.13)"; actx.fillRect(0, 0, AW, AH);
+  actx.globalCompositeOperation = "lighter";
+  const m = Math.min(AW, AH);
+  blobs.forEach((b) => {
+    const x = AW / 2 + Math.cos(t * b.fx * .5 * sp + b.ph) * AW * b.rx * 1.6, y = AH / 2 + Math.sin(t * b.fy * .5 * sp + b.ph * 1.3) * AH * b.ry * 1.6;
+    const r = m * .32 * b.sz * (.7 + level * 4);
+    [[x, y], [AW - x, y], [x, AH - y], [AW - x, AH - y]].forEach(([px, py]) => {
+      const g = actx.createRadialGradient(px, py, 0, px, py, r); const h = roadHue + b.hu + t * 6;
+      g.addColorStop(0, `hsla(${h},95%,58%,${.2 + level * .9})`); g.addColorStop(1, `hsla(${h + 40},95%,45%,0)`);
+      actx.fillStyle = g; actx.fillRect(px - r, py - r, r * 2, r * 2);
+    });
+  });
+  // paint slowly dries away
+  pctx.globalCompositeOperation = "destination-out"; pctx.fillStyle = "rgba(0,0,0,.004)"; pctx.fillRect(0, 0, paint.width, paint.height); pctx.globalCompositeOperation = "source-over";
+  requestAnimationFrame(frame);
+}
+function splat(x, y, hue, size, rng) {
+  const c = `hsl(${hue},95%,60%)`; pctx.fillStyle = c; pctx.strokeStyle = c; pctx.lineCap = "round";
+  for (let i = 0; i < 7; i++) { const a = rng() * 6.28, d = rng() * size * .9; pctx.beginPath(); pctx.arc(x + Math.cos(a) * d, y + Math.sin(a) * d, size * (.15 + rng() * .35), 0, 6.28); pctx.fill(); }
+  for (let i = 0; i < 2; i++) { const dx = x + (rng() - .5) * size, len = size * (1 + rng() * 3); pctx.lineWidth = 2 + rng() * 3; pctx.beginPath(); pctx.moveTo(dx, y); pctx.lineTo(dx, y + len); pctx.stroke(); pctx.beginPath(); pctx.arc(dx, y + len, pctx.lineWidth * .9, 0, 6.28); pctx.fill(); }
+}
+function burst(n) {
+  const r = rngFor("burst"); for (let i = 0; i < n; i++) splat(r() * innerWidth, r() * innerHeight * .9, roadHue + r() * 160, 10 + r() * 38, r);
+}
+function grainInit() {
+  const c = document.createElement("canvas"); c.width = c.height = 128; const x = c.getContext("2d"), d = x.createImageData(128, 128);
+  for (let i = 0; i < d.data.length; i += 4) { const v = Math.random() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; }
+  x.putImageData(d, 0, 0); $("grain").style.backgroundImage = `url(${c.toDataURL()})`;
+}
+
+// ---------- screens ----------
+const screen = $("screen");
+function show(html, after) {
+  const apply = () => { screen.innerHTML = html; after && after(); };
+  if (document.startViewTransition && !reduce) { try { document.startViewTransition(apply); return; } catch (e) {} }
+  apply();
+}
+function say(t, c) { const m = $("msg"); if (m) { m.textContent = t; m.className = "msg " + (c || ""); } }
+function hud() {
+  let rank = RANKS[0][1]; for (const [x, n] of RANKS) if (S.xp >= x) rank = n;
+  const nxt = RANKS.find(([x]) => x > S.xp), prev = [...RANKS].reverse().find(([x]) => x <= S.xp);
+  $("rank").textContent = rank; $("xpn").textContent = S.xp; $("seedn").textContent = S.seed ? (S.seed >>> 0).toString(16).slice(0, 4) : "----";
+  $("xpbar").style.width = nxt ? (100 * (S.xp - prev[0]) / (nxt[0] - prev[0])) + "%" : "100%";
+  $("stickers").innerHTML = S.stickers.map((id, i) => stickerHtml(id, i)).join("");
+  $("trail").innerHTML = S.trail.length ? "<span>Your road</span>" + S.trail.map((id) => `<i style="--th:${NODES[id].hue}" title="${NODES[id].title}"></i>`).join("") : "";
+}
+function stickerHtml(id, i) { const n = NODES[id]; const r = mulberry(strHash(id)); return `<span class="stk" style="--sh:${n.hue};--sr:${(r() * 16 - 8).toFixed(1)}deg">${n.sticker}</span>`; }
+function setRoad(h) { roadHue = h; document.documentElement.style.setProperty("--dev", "1"); }
+
+// --- build node ---
+let B = null; // { node, mine, hintStage, locked, ghost, hintsUsed, wrongChecks }
+function renderBuild(id) {
+  const N = NODES[id], sp = N.spec, n = sp.steps, labels = countLabels(n), group = n === 8 ? 2 : 4;
+  B = { id, mine: {}, hintStage: 0, locked: false, ghost: false, hintsUsed: 0, tries: 0 };
+  setRoad(N.hue); stop();
+  const rows = lanesOf(sp).map((k) => { B.mine[k] = Array(n).fill(false); return `<div class="row" data-k="${k}"><span>${LANES[k]}</span><div class="steps${n > 8 ? " wide" : ""}" style="--n:${n}">${Array.from({ length: n }, (_, i) => `<button class="pad${Math.floor(i / group) % 2 ? " band" : ""}" data-k="${k}" data-i="${i}" data-c="${labels[i]}" style="--i:${i}" aria-pressed="false" aria-label="${LANES[k]} on count ${labels[i]}"></button>`).join("")}</div></div>`; }).join("");
+  const total = lanesOf(sp).reduce((a, k) => a + hits(sp[k]), 0);
+  show(`<div class="kick">Build it</div><h2>${N.title}</h2><p class="learn">${N.learn}</p>
+  <div class="status"><span>Tempo <b>${sp.bpm}</b> BPM</span><span>Correct <b id="okn">0</b> / <b>${total}</b></span><span>Worth up to <b>${xpFor("build")}</b> XP</span></div>
+  <div class="count${n > 8 ? " wide" : ""}" style="--n:${n}">${labels.map((l, i) => `<i class="${/^\d$/.test(l) ? "big" : ""}">${l}</i>`).join("")}</div>${rows}
+  <div class="bar"><button class="btn main" data-act="ptarget">Play target</button><button class="btn" data-act="pmine">Play mine</button><button class="btn" data-act="stop">Stop</button><button class="btn go" data-act="check">Check</button><button class="btn" data-act="hint">Hint</button><button class="btn" data-act="ghost" aria-pressed="false">Ghost beat</button><button class="btn" data-act="clear">Clear</button></div>
+  <div class="msg" id="msg">Press Play target. Count along out loud: ${labels.slice(0, n === 8 ? 8 : 8).join(" ")}&hellip; Each column is one count.</div>`);
+  B.total = total;
+}
+const xpFor = (t) => ({ build: 100, ear: 80, taste: 50, jam: 40 }[t] || 0);
+function want(k, i) { return NODES[B.id].spec[k][i] === "x"; }
+const padEl = (k, i) => document.querySelector(`.pad[data-k="${k}"][data-i="${i}"]`);
+function clearMarks() { document.querySelectorAll(".pad").forEach((p) => p.classList.remove("right", "extra", "near", "hint", "hintx")); document.querySelectorAll(".row").forEach((r) => r.classList.remove("flag")); }
+function tally(mark) {
+  const sp = NODES[B.id].spec; let ok = 0; const extras = [], missing = [];
+  lanesOf(sp).forEach((k) => sp[k].split("").forEach((c, i) => {
+    const on = B.mine[k][i], w = c === "x";
+    if (on && w) { ok++; mark && padEl(k, i).classList.add("right"); }
+    else if (on && !w) extras.push([k, i]); else if (!on && w) missing.push([k, i]);
+  }));
+  $("okn") && ($("okn").textContent = ok);
+  return { ok, extras, missing };
+}
+function check() {
+  if (B.locked) return; clearMarks(); B.tries++;
+  const r = tally(true), labels = countLabels(NODES[B.id].spec.steps);
+  if (!r.extras.length && !r.missing.length) return buildWin();
+  // near misses: an extra hit one step from a missing hit in the same lane
+  const near = []; const missing = r.missing.slice();
+  const far = r.extras.filter(([k, i]) => { const j = missing.findIndex(([mk, mi]) => mk === k && Math.abs(mi - i) === 1); if (j >= 0) { near.push([k, i, missing[j][1]]); missing.splice(j, 1); return false; } return true; });
+  far.forEach(([k, i]) => padEl(k, i).classList.add("extra")); near.forEach(([k, i]) => padEl(k, i).classList.add("near"));
+  let m = `${r.ok} of ${B.total} correct.`;
+  if (near.length) m += ` ${near.length} hit${near.length > 1 ? "s are" : " is"} one step off (amber): ${near.map(([k, i, w]) => `${LANES[k].toLowerCase()} should be on ${labels[w]}, not ${labels[i]}`).join("; ")}.`;
+  if (far.length) m += ` ${far.length} red dashed hit${far.length > 1 ? "s don't" : " doesn't"} belong.`;
+  if (missing.length) m += ` ${missing.length} still missing.`;
+  say(m, "bad");
+}
+function hint() {
+  if (B.locked) return; clearMarks(); const sp = NODES[B.id].spec, labels = countLabels(sp.steps);
+  const r = tally(false); if (!r.extras.length && !r.missing.length) return say("Everything matches. Press Check.", "good");
+  B.hintStage++; B.hintsUsed++;
+  if (B.hintStage === 1) return say("Hint 1, how many hits each drum has: " + lanesOf(sp).map((k) => `${LANES[k]} ${hits(sp[k])}`).join(", ") + ".", "tip");
+  const bad = lanesOf(sp).map((k) => [k, sp[k].split("").filter((c, i) => (c === "x") !== B.mine[k][i]).length]).sort((a, b) => b[1] - a[1])[0][0];
+  if (B.hintStage === 2) { document.querySelector(`.row[data-k="${bad}"]`).classList.add("flag"); const cs = sp[bad].split("").map((c, i) => c === "x" ? labels[i] : null).filter(Boolean); return say(`Hint 2: the ${LANES[bad].toLowerCase()} row needs the most work. Its hits land on counts ${cs.join(", ")}.`, "tip"); }
+  const pool = r.missing.length ? r.missing : r.extras, [k, i] = pool[Math.floor(rngFor("hint")() * pool.length)];
+  if (r.missing.length) { padEl(k, i).classList.add("hint"); say(`Hint ${B.hintStage}: switch on the glowing square (${LANES[k].toLowerCase()}, count ${labels[i]}).`, "tip"); }
+  else { padEl(k, i).classList.add("hintx"); say(`Hint ${B.hintStage}: switch off the dashed square (${LANES[k].toLowerCase()}, count ${labels[i]}).`, "tip"); }
+}
+function toggleGhost(btn) {
+  B.ghost = !B.ghost; btn.setAttribute("aria-pressed", B.ghost);
+  const sp = NODES[B.id].spec; document.querySelectorAll(".pad").forEach((p) => p.classList.toggle("ghost", B.ghost && sp[p.dataset.k][p.dataset.i] === "x"));
+  say(B.ghost ? "Ghost beat on: faint dots show the target. It halves the XP." : "Ghost beat off.");
+}
+function buildWin() {
+  B.locked = true; stop();
+  document.querySelectorAll('.pad[aria-pressed="true"]').forEach((p) => p.classList.add("cleared"));
+  const xp = Math.max(20, Math.round((100 - B.hintsUsed * 12 - (B.tries - 1) * 8) * (B.ghost ? .5 : 1)));
+  victory(B.id, xp);
+}
+// --- ear node ---
+let E = null;
+function mutate(spec, rng) {
+  const s = Object.assign({}, spec), ks = lanesOf(spec).filter((k) => hits(spec[k]));
+  for (let tries = 0; tries < 20; tries++) {
+    const k = ks[Math.floor(rng() * ks.length)], arr = spec[k].split(""), idx = arr.map((c, i) => c === "x" ? i : -1).filter((i) => i >= 0), i = idx[Math.floor(rng() * idx.length)], j = i + (rng() < .5 ? -1 : 1);
+    if (j < 0 || j >= arr.length || arr[j] === "x") continue; arr[i] = "."; arr[j] = "x"; s[k] = arr.join(""); return s;
+  }
+  return s;
+}
+function renderEar(id) {
+  const N = NODES[id], rng = rngFor(id), base = N.spec; stop(); setRoad(N.hue);
+  let a, b, correct = null, labels = {};
+  if (N.mode === "match") { a = base; b = mutate(base, rng); }
+  else if (N.mode === "swing") { a = Object.assign({}, base, { swing: .62 }); b = Object.assign({}, base, { swing: .5 }); }
+  else if (N.mode === "duck") { a = Object.assign({}, base, { duck: true }); b = Object.assign({}, base, { duck: false }); }
+  else { a = Object.assign({}, base, { human: "pink" }); b = Object.assign({}, base, { human: "white" }); }
+  const flip = rng() < .5; let A = flip ? b : a, Bs = flip ? a : b;
+  if (N.mode !== "taste") correct = flip ? "B" : "A"; else labels = { A: A.human, B: Bs.human };
+  E = { id, A, B: Bs, correct, labels, wrong: 0, done: false, base };
+  show(`<div class="kick">Ear training</div><h2>${N.title}</h2><p class="learn">${N.learn}</p>
+  <div class="status"><span>Worth up to <b>${xpFor(N.mode === "taste" ? "taste" : "ear")}</b> XP</span><span>Tempo <b>${base.bpm}</b> BPM</span></div>
+  <h2 style="font-size:1.1rem">${N.q}</h2>
+  ${N.ref ? `<button class="btn main ref" data-act="pref">Play reference</button>` : ""}
+  <div class="ab"><button class="btn A" data-act="pA">Play A</button><button class="btn B" data-act="pB">Play B</button></div>
+  <div class="bar"><button class="btn" data-act="stop">Stop</button></div>
+  <div class="ab"><button class="btn go" data-act="pickA">It's A</button><button class="btn go" data-act="pickB">It's B</button></div>
+  <div class="msg" id="msg">Listen to both as many times as you like, then pick.</div>`);
+}
+function earPick(p) {
+  if (E.done) return; const N = NODES[E.id];
+  if (N.mode === "taste") {
+    const mine = E.labels[p], other = p === "A" ? "B" : "A";
+    E.done = true; stop();
+    say(`You picked the one with ${mine === "pink" ? "correlated drift, like a real player" : "plain random jitter"}. The other had ${E.labels[other] === "pink" ? "correlated drift" : "plain random jitter"}. There is no wrong answer, and Hennig et al. found most listeners favoured the correlated one.`, "good");
+    return victory(E.id, 50, true);
+  }
+  if (p === E.correct) { E.done = true; stop(); return victory(E.id, E.wrong ? 30 : 80); }
+  E.wrong++; stop();
+  const why = { match: "Listen to where the hits land against the reference.", swing: "Listen for the bounce: swung notes arrive a little late.", duck: "Listen for the pad dipping each time the kick hits." }[N.mode];
+  if (E.wrong >= 2) { E.done = true; say(`Not quite. It was ${E.correct}. ${why}`, "bad"); setTimeout(() => victory(E.id, 10, true), 1800); } else say("Not quite. " + why + " Try again.", "bad");
+}
+// --- jam ---
+let J = null;
+function renderJam() {
+  const N = NODES.jam, sp = N.spec, n = 16, labels = countLabels(n); setRoad(N.hue); stop();
+  J = { mine: { K: Array(16).fill(false), S: Array(16).fill(false), H: Array(16).fill(false) }, human: "none", swing: .5, bpm: sp.bpm, duck: false };
+  J.mine.K[0] = true;
+  const rows = ["K", "S", "H"].map((k) => `<div class="row" data-k="${k}"><span>${LANES[k]}</span><div class="steps wide" style="--n:16">${Array.from({ length: 16 }, (_, i) => `<button class="pad${Math.floor(i / 4) % 2 ? " band" : ""}" data-k="${k}" data-i="${i}" data-c="${labels[i]}" style="--i:${i}" aria-pressed="${J.mine[k][i]}" aria-label="${LANES[k]} on count ${labels[i]}"></button>`).join("")}</div></div>`).join("");
+  show(`<div class="kick">No rules</div><h2>${N.title}</h2><p class="learn">${N.learn}</p>
+  <div class="count wide" style="--n:16">${labels.map((l) => `<i class="${/^\d$/.test(l) ? "big" : ""}">${l}</i>`).join("")}</div>${rows}
+  <div class="bar"><button class="btn main" data-act="jplay">Play</button><button class="btn" data-act="stop">Stop</button><button class="btn go" data-act="dice">Hand dice</button><button class="btn" data-act="splash">Splash</button><button class="btn" data-act="jclear">Clear</button></div>
+  <div class="bar"><label>Human feel <select class="sel" id="jhuman"><option value="none">Off (robot)</option><option value="white">White-noise jitter</option><option value="pink">Hand-like drift</option></select></label>
+  <label>Swing <select class="sel" id="jswing"><option value=".5">50% straight</option><option value=".58">58%</option><option value=".66">66% triplet</option></select></label>
+  <button class="btn" data-act="jduck" aria-pressed="false">Sidechain pad</button></div>
+  <div class="msg" id="msg">Press Hand dice. It follows the rules of the bar, avoids repeating itself, and its choices come from your scribble.</div>`);
+}
+function handDice() {
+  const r = rngFor("dice"); const w = (i) => i % 8 === 0 ? 1 : i % 4 === 0 ? .85 : i % 2 === 0 ? .5 : .22;
+  const prob = { K: (i) => i === 0 ? .98 : w(i) * .42, S: (i) => i === 4 || i === 12 ? .95 : i % 2 ? .07 : .06, H: (i) => w(i) * .85 };
+  ["K", "S", "H"].forEach((k) => { let prev = false; for (let i = 0; i < 16; i++) { let p = prob[k](i); if (prev) p *= .55; const on = r() < p; J.mine[k][i] = on; prev = on; const b = padEl(k, i); b.setAttribute("aria-pressed", on); b.style.setProperty("--r", (r() * 10 - 5).toFixed(1)); if (on) { const rc = b.getBoundingClientRect(); splat(rc.left + rc.width / 2, rc.top + rc.height / 2, roadHue + (k === "K" ? 0 : k === "S" ? 120 : 200), 7, r); } } });
+  say("Hand dice rolled. Tweak it, then press Play. Try the three Human feel settings.", "good");
+}
+function jamPlay() {
+  const sp = SP({ bpm: J.bpm, steps: 16, swing: J.swing, human: J.human, duck: J.duck, pad: J.duck, K: "x", S: "x", H: "x" });
+  play(sp, (k, i) => J.mine[k][i], "jam");
+}
+// --- results & forks ---
+function victory(id, xp, quiet) {
+  stop(); ding(); burst(14);
+  const N = NODES[id], first = !S.stickers.includes(id);
+  S.xp += first ? xp : Math.round(xp / 4); if (first) S.stickers.push(id); if (S.trail[S.trail.length - 1] !== id) S.trail.push(id); save();
+  $("winT").textContent = quiet ? "Nice." : "Correct!"; $("winS").textContent = `+${first ? xp : Math.round(xp / 4)} XP`;
+  const w = $("win"); w.classList.remove("show"); void w.offsetWidth; w.classList.add("show");
+  document.documentElement.style.setProperty("--dev", "1"); hud();
+  setTimeout(() => renderResult(id, first ? xp : Math.round(xp / 4)), 2000);
+}
+function renderResult(id, xp) {
+  const N = NODES[id];
+  show(`<div class="kick">Sticker earned</div><h2>${N.title}</h2><div class="stickers">${stickerHtml(id)}</div><p class="learn">${N.learn}</p><p class="learn"><b>+${xp} XP.</b></p>
+  <div class="bar"><button class="btn main" data-act="onward">${N.next.length > 1 ? "Choose a road" : N.next.length ? "Keep going" : "Back to the start"}</button></div>`);
+}
+function renderFork(opts) {
+  const cards = opts.map((id) => `<button class="fork" data-act="road" data-id="${id}" style="--fh:${NODES[id].hue}"><b>${NODES[id].title}</b><small>${NODES[id].blurb}</small></button>`).join("");
+  show(`<div class="kick">Fork in the road</div><h2>Which way?</h2><p class="learn">Both roads teach something different. Or let your hands decide.</p>
+  <div class="forks">${cards}<button class="fork" data-act="roll" style="--fh:${(roadHue + 180) % 360}"><b>Roll with my hands</b><small>Pick for me, using my scribble seed</small></button></div>`);
+}
+function enter(id) {
+  S.node = id; save(); const t = NODES[id].type;
+  if (t === "build") renderBuild(id); else if (t === "ear") renderEar(id); else renderJam();
+}
+function onward() {
+  const N = NODES[S.node];
+  if (!N.next.length) { S.node = "pulse"; save(); return enter("pulse"); }
+  if (N.next.length === 1) return enter(N.next[0]);
+  renderFork(N.next);
+}
+
+// ---------- events ----------
+screen.addEventListener("click", (e) => {
+  const pad = e.target.closest(".pad");
+  if (pad) {
+    if (B && B.locked && NODES[S.node].type === "build") return;
+    const k = pad.dataset.k, i = +pad.dataset.i, arr = (NODES[S.node].type === "jam" ? J.mine : B.mine)[k];
+    arr[i] = !arr[i]; pad.setAttribute("aria-pressed", arr[i]); pad.classList.remove("right", "extra", "near", "hint", "hintx");
+    pad.style.setProperty("--r", (rngFor("pad")() * 10 - 5).toFixed(1));
+    if (audioInit() && !muted) voice(k, ctx.currentTime);
+    if (arr[i]) { const rc = pad.getBoundingClientRect(); splat(rc.left + rc.width / 2, rc.top + rc.height / 2, roadHue + (k === "K" ? 0 : k === "S" ? 120 : 200), 6, rngFor("splat")); }
+    if (NODES[S.node].type === "build") tally(false);
+    return;
+  }
+  const b = e.target.closest("[data-act]"); if (!b) return; const a = b.dataset.act;
+  if (a === "ptarget") { const sp = NODES[B.id].spec; play(sp, (k, i) => sp[k][i] === "x", "target"); say("Playing the target. Rebuild it in the grid."); }
+  else if (a === "pmine") { const sp = NODES[B.id].spec; play(sp, (k, i) => B.mine[k][i], "mine"); say("Playing yours. Does it sound like the target?"); }
+  else if (a === "stop") { stop(); }
+  else if (a === "check") check(); else if (a === "hint") hint(); else if (a === "ghost") toggleGhost(b);
+  else if (a === "clear") { if (B.locked) return; document.querySelectorAll(".pad").forEach((p) => p.setAttribute("aria-pressed", "false")); clearMarks(); Object.keys(B.mine).forEach((k) => B.mine[k].fill(false)); tally(false); }
+  else if (a === "pref") play(E.base, (k, i) => E.base[k][i] === "x", "ref");
+  else if (a === "pA") { const s = E.A; play(s, (k, i) => s[k][i] === "x", "A"); }
+  else if (a === "pB") { const s = E.B; play(s, (k, i) => s[k][i] === "x", "B"); }
+  else if (a === "pickA") earPick("A"); else if (a === "pickB") earPick("B");
+  else if (a === "onward") onward();
+  else if (a === "road") enter(b.dataset.id);
+  else if (a === "roll") { const o = NODES[S.node].next; enter(o[Math.floor(rngFor("fork")() * o.length)]); }
+  else if (a === "jplay") jamPlay();
+  else if (a === "dice") handDice();
+  else if (a === "splash") burst(10);
+  else if (a === "jclear") { ["K", "S", "H"].forEach((k) => J.mine[k].fill(false)); document.querySelectorAll(".pad").forEach((p) => p.setAttribute("aria-pressed", "false")); }
+  else if (a === "jduck") { J.duck = !J.duck; b.setAttribute("aria-pressed", J.duck); if (cur) jamPlay(); }
+});
+screen.addEventListener("change", (e) => {
+  if (e.target.id === "jhuman") { J.human = e.target.value; if (cur) jamPlay(); }
+  if (e.target.id === "jswing") { J.swing = parseFloat(e.target.value); if (cur) jamPlay(); }
+});
+$("mute").onclick = (e) => { muted = !muted; e.target.setAttribute("aria-pressed", muted); e.target.textContent = muted ? "Sound off" : "Sound on"; if (muted) stop(); };
+document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); });
+
+// ---------- scribble start: your hand becomes the seed ----------
+const sc = $("scrib"), sx = sc.getContext("2d");
+let drawing = false, sh = 2166136261, sLen = 0, lx = 0, ly = 0, pts = 0;
+function sizeScrib() { const r = sc.getBoundingClientRect(); sc.width = r.width; sc.height = r.height; }
+sc.addEventListener("pointerdown", (e) => { drawing = true; const r = sc.getBoundingClientRect(); lx = e.clientX - r.left; ly = e.clientY - r.top; sc.setPointerCapture(e.pointerId); sh = hash32(sh, performance.now() | 0); });
+sc.addEventListener("pointermove", (e) => {
+  if (!drawing) return; const r = sc.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  sx.strokeStyle = `hsl(${(pts * 5) % 360},95%,60%)`; sx.lineWidth = 3 + Math.min(10, Math.hypot(x - lx, y - ly) / 3); sx.lineCap = "round"; sx.beginPath(); sx.moveTo(lx, ly); sx.lineTo(x, y); sx.stroke();
+  sLen += Math.hypot(x - lx, y - ly); lx = x; ly = y; pts++;
+  sh = hash32(hash32(hash32(sh, x * 7), y * 13), (performance.now() * 1000) | 0);
+  $("seedshow").textContent = "hand seed: " + (sh >>> 0).toString(16).slice(0, 6) + (pts > 25 ? "  (nice)" : "");
+});
+sc.addEventListener("pointerup", () => { drawing = false; });
+$("go").onclick = () => {
+  const fresh = !S.seed;
+  S.seed = (sh ^ Math.imul(pts + 1, 2654435761) ^ (performance.now() | 0)) >>> 0; if (!S.seed) S.seed = 1;
+  save(); audioInit(); $("start").hidden = true; seedArt(); hud(); enter(S.node);
+};
+function boot() { sizeArt(); sizeScrib(); grainInit(); seedArt(); hud(); requestAnimationFrame(frame); }
+addEventListener("resize", () => { sizeArt(); });
+boot();
+</script>
+</body>
+</html>
