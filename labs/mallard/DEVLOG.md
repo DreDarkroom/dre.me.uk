@@ -50,6 +50,11 @@ Dre asked for: a richer score (inspired by Noisia's sound design and Max Cooper'
 - **Recommended next milestone:** an in-page record button (canvas plus master audio to WebM), which would also work around the OBS audio-capture problem.
 - **Process note:** these changes sit on the same branch as the `labs.dre.me.uk` deploy config (PR #11), because the session is limited to one branch. They are independent and can be reviewed separately by commit.
 
+## 2026-10-19: v10 in-page recorder
+Built at Dre's request as the recommended next milestone (and a workaround for the OBS audio-capture problem). See `ROADMAP.md` for the full description, evidence and limits.
+- **Verified (headless Chromium):** 4.7 s test recording, 1.5 MB, WebM (VP9 + Opus); audio decoded and non-silent (RMS 0.146); video 412 x 860; captions and dial appear in the recording; second recording works; no page errors; audio peaks and the full journey regression unchanged.
+- **Not verified:** real devices, Safari or iPhone, Save behaviour in Dre's browser, that OBS capture is no longer needed, the robot's voice line (not captured: browser speech is outside the Web Audio graph).
+
 ## Known blockers
 See `README.md`. In short: no verified deployment, OBS audio capture, no DNS/Cloudflare access for the AI session, logo and photos not retrievable, no playtest notes.
 

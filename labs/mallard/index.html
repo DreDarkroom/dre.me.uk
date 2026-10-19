@@ -21,6 +21,14 @@ canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;display:b
 #sub{color:var(--dim);font-size:.85rem;margin-top:.2rem;min-height:1.3rem;text-shadow:0 1px 8px #000}
 #top{position:fixed;top:0;left:0;right:0;z-index:3;display:flex;justify-content:space-between;gap:.5rem;padding:max(.7rem,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));pointer-events:none}
 .pill{pointer-events:auto;font:600 .78rem "DM Sans",sans-serif;color:var(--text);background:rgba(10,6,16,.65);border:1px solid rgba(255,255,255,.2);border-radius:2rem;padding:.45rem .9rem;min-height:2.2rem;cursor:pointer;touch-action:manipulation}
+.grp{display:flex;gap:.5rem}
+#rec[aria-pressed=true]{border-color:#ff4060;color:#ff9aab}
+#recbox{position:fixed;left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));bottom:max(1rem,env(safe-area-inset-bottom,0px));z-index:8;max-width:30rem;margin:0 auto;background:rgba(10,6,16,.92);border:1px solid rgba(255,255,255,.22);border-radius:.9rem;padding:.8rem}
+#recbox[hidden]{display:none}
+#recbox video{width:100%;max-height:38vh;background:#000;border-radius:.5rem;display:block}
+#recbox p{margin:.3rem 0;color:var(--dim);font-size:.85rem}
+#recbox .row2{display:flex;gap:.5rem;margin-top:.5rem}
+#recbox .row2 .btn{flex:1;text-align:center;min-height:2.6rem}
 .pill:focus-visible,.btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
 #gate{position:fixed;inset:0;z-index:9;background:#0a0610;display:flex;align-items:center;justify-content:center;padding:1rem max(16px,env(safe-area-inset-left,0px));overflow:auto}
 #gate[hidden]{display:none}
@@ -39,10 +47,11 @@ label.ck input{margin-top:.25rem;width:1.1rem;height:1.1rem}
 @media (prefers-reduced-motion:reduce){#cap{transition:none}}
 </style>
 <canvas id="c" aria-label="A yellow rubber duck. Tap it."></canvas>
-<div id="top"><button class="pill" id="snd" aria-pressed="false">Sound on</button><button class="pill" id="help">Gestures</button></div>
+<div id="top"><button class="pill" id="snd" aria-pressed="false">Sound on</button><div class="grp"><button class="pill" id="rec" aria-pressed="false" title="Record the picture and the sound to a video file on this device">● Record</button><button class="pill" id="help">Gestures</button></div></div>
 <div id="hint" role="note"><b>Touch</b><br>Tap duck: squeak<br>Double tap: wake it<br>Triple tap: open it<br>1 finger drag: steer<br>2 finger swipe: change colour<br>3 finger swipe: warp time<br><b>Keys</b> 1 / 2 / 3 do the taps, arrows steer.</div>
 <button class="pill" id="skip" hidden style="position:fixed;z-index:8;right:max(16px,env(safe-area-inset-right,0px));top:3.4rem">Skip</button>
 <div id="hud"><div id="cap"></div><div id="sub"></div></div>
+<div id="recbox" hidden role="dialog" aria-label="Recording"><p id="recmsg"></p><video id="recvid" controls playsinline></video><div class="row2"><button class="btn main" id="recsave">Save video</button><button class="btn" id="recclose">Close</button></div></div>
 <div id="gate" role="dialog" aria-modal="true" aria-labelledby="gt">
   <div>
     <h1 id="gt">Mallard Protocol</h1>
@@ -87,12 +96,12 @@ const CAP = [
 function say(i) { if (typeof horror !== "undefined" && horror) return; $("cap").textContent = CAP[i][0]; $("sub").textContent = CAP[i][1]; }
 
 // ---------- audio ----------
-let ac = null, out = null, muted = false, drone = null, loopTimer = 0, step = 0, nextT = 0, musicOn = false, kickGain = null;
+let masterNode = null; let ac = null, out = null, muted = false, drone = null, loopTimer = 0, step = 0, nextT = 0, musicOn = false, kickGain = null;
 function audio() {
   if (ac) { if (ac.state === "suspended") ac.resume(); return true; }
   const A = window.AudioContext || window.webkitAudioContext; if (!A) return false;
   ac = new A(); out = ac.createGain(); out.gain.value = mode === "intense" ? .95 : mode === "calm" ? .5 : .75;
-  const comp = ac.createDynamicsCompressor(); out.connect(comp); comp.connect(ac.destination); return true;
+  const comp = ac.createDynamicsCompressor(); out.connect(comp); comp.connect(ac.destination); masterNode = comp; return true;
 }
 function pan(p) { const n = ac.createStereoPanner ? ac.createStereoPanner() : null; if (n) { n.pan.value = Math.max(-1, Math.min(1, p)); n.connect(out); return n; } return out; }
 function squeak(px) {
@@ -497,6 +506,7 @@ function frame(now) {
   if (phase >= 6) { /* vignette */ const v = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .3, W / 2, H / 2, Math.max(W, H) * .8); v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,.7)"); g.fillStyle = v; g.fillRect(0, 0, W, H); }
   if (musicOn && techno) { vizTick(); drawViz(now); }
   if (horror) drawHorror(now); else if (!horrorDone && now - t0 > HORROR_AT) startHorror();
+  if (recorder && recorder.state === "recording") drawCaps();
   auto(now); requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
@@ -732,6 +742,45 @@ const GM = {
 function startGames() { game = { i: -1, cur: null }; go(9); $("skip").hidden = false; nextGame(); }
 function nextGame() { if (!game) return; game.i++; gtoken++; if (game.i >= GAMES.length) { game.cur = null; game.end = performance.now(); setCap("TRANSMOGRIFY", "You began with a toy duck. Everything since was the same attention in a different shape. Tap to begin again."); $("skip").hidden = true; whoosh(1, 2); return; } game.cur = GM[GAMES[game.i]](); }
 function restartAll() { techno = true; game = null; $("skip").hidden = true; phase = -1; hueT = 330; steerX = 0; steerY = 0; go(0); say(0); }
+
+
+// ---------- in-page recorder: the picture and the master audio to a video file, on this device only ----------
+// Records the canvas (including dial and captions, drawn onto it while recording) and everything the page plays through Web Audio.
+// The spoken line in the 6:66 scene is the browser's own speech engine and is not part of the Web Audio graph, so it is not recorded.
+let recorder = null, recChunks = [], recT0 = 0, recTimer = 0, recDest = null, recUrl = null, recExt = "webm";
+const REC_MAX_S = 8 * 60;
+function recMime() { if (!window.MediaRecorder || !cv.captureStream) return null; return ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm", "video/mp4"].find((m) => MediaRecorder.isTypeSupported(m)) || ""; }
+function recBox(msg, withVideo) { $("recmsg").textContent = msg; $("recvid").style.display = withVideo ? "block" : "none"; $("recsave").style.display = withVideo ? "block" : "none"; $("recbox").hidden = false; }
+function recClean() { if (recUrl) { URL.revokeObjectURL(recUrl); recUrl = null; } $("recvid").removeAttribute("src"); $("recbox").hidden = true; }
+function startRec() {
+  const mime = recMime(); if (mime === null) return recBox("This browser cannot record the page. Try a recent Chrome, Edge or Firefox.", false);
+  if (!audio() || !masterNode) return recBox("Audio is not ready yet. Press Start first.", false);
+  recClean(); if (!recDest) { recDest = ac.createMediaStreamDestination(); masterNode.connect(recDest); }
+  let stream; try { stream = new MediaStream([...cv.captureStream(30).getVideoTracks(), ...recDest.stream.getAudioTracks()]); recorder = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 4000000, audioBitsPerSecond: 192000 } : undefined); } catch (e) { recorder = null; return recBox("Recording could not start in this browser.", false); }
+  recExt = /mp4/.test(recorder.mimeType) ? "mp4" : "webm"; recChunks = [];
+  recorder.ondataavailable = (e) => { if (e.data && e.data.size) recChunks.push(e.data); };
+  recorder.onstop = finishRec; recorder.start(1000); recT0 = performance.now();
+  $("rec").setAttribute("aria-pressed", "true"); $("hud").style.visibility = "hidden"; recTimer = setInterval(tickRec, 500); tickRec();
+}
+function tickRec() { if (!recorder) return; const s = Math.floor((performance.now() - recT0) / 1000); $("rec").textContent = "■ " + String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); if (s >= REC_MAX_S) stopRec(); }
+function stopRec() { if (recorder && recorder.state !== "inactive") recorder.stop(); clearInterval(recTimer); $("rec").setAttribute("aria-pressed", "false"); $("rec").textContent = "● Record"; $("hud").style.visibility = "visible"; }
+function finishRec() {
+  const r = recorder; recorder = null; if (!recChunks.length) return recBox("Nothing was recorded.", false);
+  const blob = new Blob(recChunks, { type: (r && r.mimeType) || "video/webm" }); window.__lastRec = blob; recUrl = URL.createObjectURL(blob); $("recvid").src = recUrl;
+  recBox("Recorded " + (blob.size / 1048576).toFixed(1) + " MB, kept on this device only." + (muted ? " Sound was off, so the audio is silent." : "") + " If Save does nothing, press and hold the video to save it.", true);
+}
+function saveRec() { if (!recUrl) return; const d = new Date(), z = (n) => String(n).padStart(2, "0"), a = document.createElement("a"); a.href = recUrl; a.download = "mallard-protocol-" + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + "-" + z(d.getHours()) + z(d.getMinutes()) + z(d.getSeconds()) + "." + recExt; document.body.appendChild(a); a.click(); a.remove(); }
+// captions are normal page text, so while recording they are also drawn onto the canvas
+function drawCaps() {
+  const t = $("cap").textContent, s = $("sub").textContent; if (!t && !s) return; const fs = Math.max(14, Math.min(W, H) * .045), maxW = W * .9;
+  g.save(); g.textAlign = "center"; g.shadowColor = "#000"; g.shadowBlur = 14; g.fillStyle = "#f3ecef"; g.font = "400 " + fs + "px 'Rubik Mono One','Arial Black',sans-serif";
+  let y = H - Math.max(24, H * .04); const sf = fs * .62, lines = []; g.font = "400 " + sf + "px 'DM Sans',sans-serif"; let cur = "";
+  s.split(" ").forEach((w) => { const tst = cur ? cur + " " + w : w; if (g.measureText(tst).width > maxW && cur) { lines.push(cur); cur = w; } else cur = tst; }); if (cur) lines.push(cur);
+  g.fillStyle = "#b3a6b2"; for (let i = lines.length - 1; i >= 0; i--) { g.fillText(lines[i], W / 2, y); y -= sf * 1.35; }
+  y -= fs * .4; g.font = "400 " + fs + "px 'Rubik Mono One','Arial Black',sans-serif"; g.fillStyle = "#f3ecef"; g.fillText(t, W / 2, y); g.restore();
+}
+$("rec").onclick = () => { if (recorder) stopRec(); else startRec(); };
+$("recsave").onclick = saveRec; $("recclose").onclick = recClean;
 
 // ---------- gate ----------
 $("ok").onchange = (e) => { $("bint").disabled = !e.target.checked; };
