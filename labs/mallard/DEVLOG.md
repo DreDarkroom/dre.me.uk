@@ -41,6 +41,15 @@ State found:
 - A public URL for `labs/mallard/` was **not verified**: the AI sandbox cannot reach `dre.me.uk` or the github.io address (connection refused by its proxy).
 Regression evidence (headless Chromium, fake clock fast-forward, branch head): phases 1 to 8 advance, games 0 to 5 advance, the end card appears, the 6:66 robot appears and ends. No page errors.
 
+## 2026-10-19: creative direction expansion and v9 (event bus)
+Dre asked for: a richer score (inspired by Noisia's sound design and Max Cooper's maths-sound-visual link, original work only), audio-reactive visuals driven by musical structure, research on the Salt-Wax live apparatus, research on DevelopDrop, and a longer-term reusable instrument. Done as research plus one small build; see `ROADMAP.md`.
+- **Built (v9):** a music event bus. The score now emits step, bar, kick, arpeggio and bell events; the picture releases them on the audio clock. First visible results: a small dial showing the 16-step bar against the 5-step arpeggio cycle, a dot following the orbiting bell, a kick ring, and a colour shift at section changes.
+- **Verified (headless Chromium):** events are produced and consumed (for example in one 6 s run: 49 steps, 4 bars, 13 kicks, 43 arpeggio notes; a bell event appeared in the breakdown); the colour target moves from 330 to 380 at bar 16; audio peaks unchanged (0.14 to 0.84, no clipping); the full journey still runs end to end with no page errors.
+- **Not verified:** how it looks or feels on a real phone and TV; whether the dial is clear to a first-time viewer.
+- **Research findings:** Salt-Wax not identified (needs name or reference from Dre). DevelopDrop is a real, mature repository whose event-on-audio-clock design was adopted. Max Cooper and Noisia notes are summarised with their limits in `ROADMAP.md`.
+- **Recommended next milestone:** an in-page record button (canvas plus master audio to WebM), which would also work around the OBS audio-capture problem.
+- **Process note:** these changes sit on the same branch as the `labs.dre.me.uk` deploy config (PR #11), because the session is limited to one branch. They are independent and can be reviewed separately by commit.
+
 ## Known blockers
 See `README.md`. In short: no verified deployment, OBS audio capture, no DNS/Cloudflare access for the AI session, logo and photos not retrievable, no playtest notes.
 
