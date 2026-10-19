@@ -30,7 +30,7 @@ Core idea: misdirection. Attention is a spotlight. The duck is the trick and the
 | 6 | Tunnel and a pair of amber eyes | |
 | 7 | Cat reveal: manga speed lines, ink outline draws, colour floods out from the eyes, tabby stripes, glowing tribal marks, chest mandala. Sub drop and meow | caption "You watched the duck" |
 | 8 | Street-art wall cycles brick / halftone / kaleidoscope, cat holds, purr | |
-| 9 | Games: Echo (Simon with stereo notes), Odd eye, Labyrinth, Beat lock, Ship finale | Skip available |
+| 9 | Games: Echo (Simon with stereo notes), Odd eye, Labyrinth, Beat lock, Ship (spacetime), Wonderland (original, public-domain-spirited: falling objects, tap to grow or shrink, a floating grin, music-box arpeggio that moves the pictures; the techno stops and a waltz-ish pentatonic arpeggio takes over) | Skip available |
 | end | "Transmogrify" card, tap to restart | |
 | any | 6:66 robot at 426 s (add `#horror` to the URL to trigger it after 6 s) | 12 s, skippable |
 
@@ -58,7 +58,7 @@ Everything auto-advances so it also plays hands-off.
 1. Real playtesting by 5 to 10 people on different phones. Record what confuses them.
 2. Cinematic polish: camera pans in the cat scene, a fuller cat body, richer street-art stages.
 3. Free media: CC0 or public-domain photos (for example from Pexels or Wikimedia Commons, check each licence) as background textures. A CC0 music bed. A "wall of videos" built from embeds whose terms allow it.
-4. Wonderland mode: original magical section inspired by public-domain Alice (1865), plus Méliès-style trickery. No Disney material.
+4. Wonderland mode: a first version exists (see timeline). Next: more hand-drawn manga detail, Méliès-style trickery, and a cinematic camera. No Disney material.
 5. Dashboard: cookieless, anonymous counts (visits, completion by phase, mode chosen, skips, time to 6:66). A phone page that sends a tiny steering signal. Needs a backend (for example a Cloudflare Worker with a KV or D1 store).
 6. NOT A CULT references once Dre supplies the logo files.
 7. The DarkLabs robot drummer joining the beat.

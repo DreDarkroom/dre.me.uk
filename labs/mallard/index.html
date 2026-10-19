@@ -121,6 +121,7 @@ function startMusic() {
   loopTimer = setInterval(() => {
     if (muted) { nextT = Math.max(nextT, ac.currentTime); return; }
     while (nextT < ac.currentTime + .15) {
+      if (!techno) { step++; nextT += sec; continue; }
       const i = step % 16, t = nextT;
       if (i % 4 === 0) kick(t);
       if (i % 4 === 2) { hat(t, (step >> 2) % 2 ? .8 : -.8, true); bass(t, [55, 55, 65.4, 49][(step >> 4) % 4], sec * 3.5, (step >> 3) % 2 ? .5 : -.5); }
@@ -409,6 +410,7 @@ function auto(now) {
   else if (phase === 8 && since > 20000 && !game) startGames();
 }
 function frame(now) {
+  _lastFrame = now;
   if (!started) { requestAnimationFrame(frame); return; }
   hue += (hueT - hue) * .06; warp += (warpT - warp) * .05; duck.sq *= .86; cyber += (((phase >= 3 ? 1 : phase === 2 ? .35 : 0)) - cyber) * .03; tunnel += (((phase >= 3 ? 1 : 0)) - tunnel) * .02; if (!sysReduce) steerX *= .995;
   const e = now - phaseT;
@@ -488,7 +490,8 @@ function drawHorror(now) {
 let game = null, gtoken = 0;
 function setCap(a, b) { if (typeof horror !== "undefined" && horror) return; $("cap").textContent = a; $("sub").textContent = b; }
 function tone(freq, pn, len = .35, type = "sine", vol = .35) { if (!audio() || muted) return; const t = ac.currentTime, o = ac.createOscillator(), gn = ac.createGain(); o.type = type; o.frequency.value = freq; gn.gain.setValueAtTime(0, t); gn.gain.linearRampToValueAtTime(vol, t + .01); gn.gain.exponentialRampToValueAtTime(.001, t + len); o.connect(gn); gn.connect(pan(pn)); o.start(t); o.stop(t + len + .02); }
-const GAMES = ["echo", "odd", "maze", "beat", "ship"];
+const GAMES = ["echo", "odd", "maze", "beat", "ship", "wonder"];
+let techno = true, _lastFrame = 0, _prevFrame = 0; const dt0 = () => .0167;
 const GM = {
   echo() {
     const T = gtoken, sc = (a, b) => { if (T === gtoken) setCap(a, b); };
@@ -540,7 +543,7 @@ const GM = {
       [21, "THE MISSING MASS", "Galaxies spin too fast for the matter we can see. Something unseen holds them together. Roughly a quarter of the universe is dark matter. Ordinary matter, everything you have ever touched, is about 5%."],
       [34, "TWO PLACES AT ONCE", "In quantum physics a particle can be in several states until something measures it. A minute ago you were looking at a duck and a cat. Both were true until you looked."],
       [46, "THE CLOCK SLOWS", "Heavy things bend space and bend time. Somewhere between two beats, a second is a little longer than it should be."],
-      [57, "TRANSMOGRIFY", "To change into a different shape. You started as a person looking at a toy. Tap to begin again."],
+      [57, "THE FLOOR OPENS", "The ship has a trapdoor. Hold on to something small."],
     ];
     let li = -1, out = 0, ship = 0, last = performance.now(), t0 = last, vv = 0, ended = false;
     ac && tone(55, 0, 6, "sine", .12);
@@ -565,11 +568,55 @@ const GM = {
         // cockpit frame + HUD
         g.fillStyle = "rgba(8,8,16,.92)"; g.beginPath(); g.rect(0, 0, W, H); g.roundRect(W * .05, H * .06, W * .9, H * .66, 38); g.fill("evenodd"); g.strokeStyle = "rgba(180,200,255,.35)"; g.lineWidth = 3; g.beginPath(); g.roundRect(W * .05, H * .06, W * .9, H * .66, 38); g.stroke();
         g.fillStyle = hsl(hue + 160, 100, 70, .9); g.font = "600 12px ui-monospace,Consolas,monospace"; g.textAlign = "left"; const hy = H * .76; g.fillText(`v ${v.toFixed(3)} c`, W * .08, hy); g.fillText(`gamma ${gam.toFixed(2)}`, W * .08, hy + 16); g.textAlign = "right"; const mmss = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}`; g.fillText(`ship ${mmss(ship)}`, W * .92, hy); g.fillText(`outside ${mmss(out)}`, W * .92, hy + 16);
-        if (e > 66 && !ended) { ended = true; nextGame(); }
+        if (e > 64 && !ended) { ended = true; nextGame(); }
       },
       down(x, y) { steerX = (x / W - .5) * 1.4; steerY = (y / H - .5) * 1.4; },
       move(x, y) { steerX = (x / W - .5) * 1.4; steerY = (y / H - .5) * 1.4; warpT = clamp(2.2 - (y / H) * 2.6, .5, 4); },
       key(k) { if (k === "ArrowUp") warpT = Math.min(5, warpT + .4); if (k === "ArrowDown") warpT = Math.max(.4, warpT - .4); if (k === "ArrowLeft") steerX = Math.max(-1, steerX - .15); if (k === "ArrowRight") steerX = Math.min(1, steerX + .15); },
+    };
+  },
+
+  wonder() {
+    const T = gtoken, sc = (a, b) => { if (T === gtoken) setCap(a, b); };
+    const LINES = [
+      [0, "DOWN THE HOLE", "The floor opened. It is not falling if everything falls with you."],
+      [10, "DRINK ME", "Tap anything to make it huge. Tap again and it shrinks. Size is only an opinion."],
+      [22, "THE GRIN", "A smile with no cat around it. The stripes were only a costume."],
+      [34, "MUSIC FOR THE FALLING", "The old cartoon trick: let the music move the pictures. Watch the objects follow the notes."],
+      [45, "CURIOUSER", "Transmogrify: to turn into something stranger, one small step at a time."],
+    ];
+    const kinds = ["clock", "cup", "card", "key", "mushroom"], r = rnd(Math.floor(Math.random() * 1e6)), obj = Array.from({ length: 16 }, (_, i) => ({ k: kinds[i % 5], x: r(), y: r(), s: 1, ts: 1, rot: r() * 6, vr: (r() - .5) * .8, hh: r() * 360, n: i % 5 }));
+    const SC = [261.6, 293.7, 329.6, 392, 440, 523.3, 587.3, 659.3, 784];
+    let li = -1, t0 = performance.now(), step = 0, nextT = ac ? ac.currentTime + .2 : 0, tm = 0, ended = false, fade = 0;
+    techno = false;
+    const note = (i, vol = .22, pn = 0) => { if (!audio() || muted) return; const f = SC[i % SC.length], t = ac.currentTime; [[1, vol], [2.003, vol * .35], [3.01, vol * .12]].forEach(([m, v]) => { const o = ac.createOscillator(), gn = ac.createGain(); o.type = "sine"; o.frequency.value = f * m; gn.gain.setValueAtTime(0, t); gn.gain.linearRampToValueAtTime(v, t + .006); gn.gain.exponentialRampToValueAtTime(.001, t + 1.1); o.connect(gn); gn.connect(pan(pn)); o.start(t); o.stop(t + 1.15); }); };
+    if (audio()) { nextT = ac.currentTime + .2; tm = setInterval(() => { if (T !== gtoken) { clearInterval(tm); return; } while (nextT < ac.currentTime + .15) { const pat = [0, 2, 4, 2, 5, 4, 7, 4, 2, 4, 5, 2], n = pat[step % pat.length]; note(n + ((step >> 3) % 2) * 1, step % 3 === 0 ? .2 : .11, Math.sin(step * .6) * .8); const si = step; setTimeout(() => { obj.forEach((o, j) => { if ((j + si) % 6 === 0) o.bump = 1; }); }, Math.max(0, (nextT - ac.currentTime) * 1000)); step++; nextT += 60 / 96 / 2; } }, 30); }
+    const draw1 = (o, s) => { g.save(); g.rotate(o.rot); const hh = o.hh + hue; g.lineWidth = 3; g.strokeStyle = "rgba(30,20,50,.8)";
+      if (o.k === "clock") { g.fillStyle = hsl(hh, 80, 88); g.beginPath(); g.arc(0, 0, 26, 0, 7); g.fill(); g.stroke(); g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -16); g.moveTo(0, 0); g.lineTo(11, 5); g.stroke(); }
+      else if (o.k === "cup") { g.fillStyle = hsl(hh, 85, 80); g.beginPath(); g.moveTo(-22, -10); g.lineTo(22, -10); g.quadraticCurveTo(20, 22, 0, 22); g.quadraticCurveTo(-20, 22, -22, -10); g.fill(); g.stroke(); g.beginPath(); g.arc(25, 2, 9, -1.4, 1.4); g.stroke(); }
+      else if (o.k === "card") { g.fillStyle = "#fff7f0"; g.beginPath(); g.roundRect(-18, -26, 36, 52, 5); g.fill(); g.stroke(); g.fillStyle = (o.n % 2) ? "#d1122b" : "#1a1620"; g.font = "700 26px serif"; g.textAlign = "center"; g.fillText((o.n % 2) ? "♥" : "♠", 0, 9); }
+      else if (o.k === "key") { g.strokeStyle = hsl(hh, 90, 55); g.lineWidth = 5; g.beginPath(); g.arc(-12, 0, 9, 0, 7); g.moveTo(-3, 0); g.lineTo(26, 0); g.moveTo(18, 0); g.lineTo(18, 9); g.moveTo(26, 0); g.lineTo(26, 8); g.stroke(); }
+      else { g.fillStyle = hsl(hh, 85, 60); g.beginPath(); g.ellipse(0, -6, 26, 16, 0, Math.PI, 0); g.fill(); g.stroke(); g.fillStyle = "#fff0dd"; g.fillRect(-7, -6, 14, 22); g.strokeRect(-7, -6, 14, 22); g.fillStyle = "rgba(255,255,255,.8)"; [[-12, -12], [4, -16], [14, -8]].forEach(([x, y]) => { g.beginPath(); g.arc(x, y, 3, 0, 7); g.fill(); }); }
+      g.restore(); };
+    return {
+      draw(now) {
+        const e = (now - t0) / 1000; while (li + 1 < LINES.length && e >= LINES[li + 1][0]) { li++; sc(LINES[li][1], LINES[li][2]); if (li === 0) whoosh(-1, 2.2); }
+        fade = Math.min(1, e / 3); const hh = hue + e * 6;
+        const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, hsl(hh + 250, 70, 18 + fade * 22)); bg.addColorStop(.55, hsl(hh + 300, 75, 22 + fade * 26)); bg.addColorStop(1, hsl(hh + 180, 70, 16 + fade * 20)); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+        // the hole: rings rushing outward + a chequered floor that tilts
+        const cx = W / 2 + steerX * W * .1, cy = H * .42; for (let i = 0; i < 14; i++) { const f = ((i + e * .9) % 14) / 14, rr = Math.pow(f, 2.2) * Math.hypot(W, H) * .7; g.strokeStyle = hsl(hh + i * 20, 85, 70, .08 + f * .5); g.lineWidth = 2 + f * 18; g.beginPath(); g.ellipse(cx, cy, rr, rr * .72, Math.sin(e / 4) * .25, 0, 7); g.stroke(); }
+        g.save(); g.globalAlpha = .3 * fade; const tl = 46; for (let y = 0; y < 5; y++) for (let x = -2; x < W / tl + 2; x++) { if ((x + y + Math.floor(e * 1.5)) % 2) continue; g.fillStyle = hsl(hh + 40, 60, 90); const yy = H * .78 + y * tl * (.5 + y * .12); g.fillRect(x * tl + (e * 20) % (tl * 2), yy, tl, tl * (.5 + y * .12)); } g.restore();
+        // the grin: crescent smile and eyes drifting in and out
+        const ga = sm((e - 20) / 3) * (1 - sm((e - 44) / 3)) * (.7 + .3 * Math.sin(e * 1.3)); if (ga > .01) { const gx = W / 2 + Math.sin(e * .5) * W * .1, gy = H * .36, gw = Math.min(W * .5, 230); g.save(); g.globalAlpha = ga; g.shadowColor = "#fff"; g.shadowBlur = 24; g.fillStyle = "#fff8e8"; g.beginPath(); g.moveTo(gx - gw, gy); g.quadraticCurveTo(gx, gy + gw * .85, gx + gw, gy); g.quadraticCurveTo(gx, gy + gw * .35, gx - gw, gy); g.fill(); g.shadowBlur = 0; for (let k = 0; k < 9; k++) { const tx = gx - gw * .8 + k * gw * .2, ty = gy + Math.sin((k / 8) * Math.PI) * gw * .34; g.fillStyle = "#fff"; g.fillRect(tx - 2, ty - 1, 4, 16); } [-1, 1].forEach((s) => { g.fillStyle = "#ffb43a"; g.beginPath(); g.ellipse(gx + s * gw * .45, gy - gw * .55, 22, 14, s * -.2, 0, 7); g.fill(); g.fillStyle = "#050305"; g.beginPath(); g.ellipse(gx + s * gw * .45, gy - gw * .55, 3.5, 13, 0, 0, 7); g.fill(); }); g.restore(); }
+        // floating objects: drift upward, grow or shrink on tap, bump with the music
+        obj.forEach((o, i) => { o.y -= dt0() * (.06 + .05 * Math.sin(i)); if (o.y < -.1) { o.y = 1.1; o.x = Math.random(); } o.rot += o.vr * dt0(); o.s += (o.ts - o.s) * .12; o.bump = (o.bump || 0) * .9; const sc2 = o.s * (1 + o.bump * .25), px = o.x * W + Math.sin(e + i) * 18, py = o.y * H; g.save(); g.translate(px, py); g.scale(sc2, sc2); g.globalAlpha = fade; draw1(o, sc2); g.restore(); o._x = px; o._y = py; });
+        // sparkle trail from the notes
+        if (e > 34) for (let k = 0; k < 6; k++) { const a = e * 1.3 + k * 1.05, rr = 80 + k * 26; g.fillStyle = hsl(hh + k * 40, 100, 80, .8); g.beginPath(); g.arc(W / 2 + Math.cos(a) * rr * 1.3, H * .45 + Math.sin(a * 1.2) * rr * .8, 3 + (k % 3), 0, 7); g.fill(); }
+        if (e > 52 && !ended) { ended = true; techno = true; clearInterval(tm); nextGame(); }
+      },
+      down(x, y) { let best = null, bd = 1e9; obj.forEach((o, i) => { const d = Math.hypot(x - o._x, y - o._y); if (d < 60 * o.s && d < bd) { bd = d; best = i; } }); if (best !== null) { const o = obj[best]; o.ts = o.ts > 1.5 ? .5 : (o.ts < .8 ? 1 : 2.4); note(best + (o.ts > 1.5 ? 4 : 0), .3, (o._x / W - .5) * 2); } steerX = (x / W - .5) * 1.4; },
+      move(x) { steerX = (x / W - .5) * 1.4; },
+      key() {},
     };
   },
   beat() {
@@ -589,7 +636,7 @@ const GM = {
 };
 function startGames() { game = { i: -1, cur: null }; go(9); $("skip").hidden = false; nextGame(); }
 function nextGame() { if (!game) return; game.i++; gtoken++; if (game.i >= GAMES.length) { game.cur = null; game.end = performance.now(); setCap("TRANSMOGRIFY", "You began with a toy duck. Everything since was the same attention in a different shape. Tap to begin again."); $("skip").hidden = true; whoosh(1, 2); return; } game.cur = GM[GAMES[game.i]](); }
-function restartAll() { game = null; $("skip").hidden = true; phase = -1; hueT = 330; steerX = 0; steerY = 0; go(0); say(0); }
+function restartAll() { techno = true; game = null; $("skip").hidden = true; phase = -1; hueT = 330; steerX = 0; steerY = 0; go(0); say(0); }
 
 // ---------- gate ----------
 $("ok").onchange = (e) => { $("bint").disabled = !e.target.checked; };
