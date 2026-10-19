@@ -49,6 +49,17 @@ Everything auto-advances so it also plays hands-off.
 - State is a few globals: `phase`, `game`, `horror`, `hue`, `warp`, `steerX/Y`, `mode`.
 - Hosting: private Claude artifact for review. The same file can be copied to any static host (GitHub Pages, Cloudflare Pages). A repo copy lives at `labs/mallard/index.html` if the PR was merged.
 
+## 5b. Music engine (v8)
+A 48-bar progressive loop at 126 BPM, built from scheduled Web Audio nodes (no samples).
+- Sections: intro (pad, drone, hats, ghostly SFX), build (kick, syncopated bass and clap arrive, noise riser), main (full groove), breakdown (no kick; pad, Shepard-Risset rising tone, heartbeat thumps, orbiting bells, whispers), rebuild (descending Shepard tone, kick returns).
+- Syncopation: bass on a 3+3+2 grouping, ghost kicks and a ghost clap that move around the bar, a one-bar kick dropout every 8 bars, offbeat open hats, small swing.
+- Polyrhythm: a 5-step arpeggio cycle over the 16-step bar, so it keeps shifting against the beat.
+- Production: convolution reverb (generated impulse), ping-pong delay (dotted eighth), sidechain ducking of pad and bass from the kick, filter envelopes, a master compressor.
+- Stereo tricks: pad is two detuned saw groups that slowly swap sides (autopan) through a phaser (swept allpass filters); Haas-effect arpeggio notes; binaural-style drone pair a few Hz apart; Shepard-Risset illusion; HRTF-panned bells that orbit the listener (best on headphones); riser panned left to right.
+- Spooky SFX: formant-filtered whispers (skipped in Calm), detuned inharmonic bells, heartbeat thumps.
+- The music ducks to 12% during the 6:66 robot scene.
+- Checked offline: no clipping and no errors in each section, with peak about 0.14 (intro) to 0.8 (rebuild). Nobody has listened to it critically yet, so the mix is untested by ear.
+
 ## 6. Tuning guide
 - Colour palette: warm yellow `#ffd23a`, beak orange, hot magenta, cyan, near-black `#06040a`. Cat: light-brown fur, grey rim, black tabby stripes, with neon only on the tribal marks.
 - Tempo 126 BPM, bass pattern A-A-C-G, hats on offbeats, extra hats from phase 3.

@@ -110,26 +110,90 @@ function whoosh(dir, dur = 1.2) {
   const p = ac.createStereoPanner ? ac.createStereoPanner() : null; if (p) { p.pan.setValueAtTime(-dir, t); p.pan.linearRampToValueAtTime(dir, t + dur); p.connect(out); gn.connect(p); } else gn.connect(out);
   s.connect(f); f.connect(gn); s.start(t); s.stop(t + dur);
 }
-function bass(t, f, len, p) { const o = ac.createOscillator(), fl = ac.createBiquadFilter(), gn = ac.createGain(); o.type = "sawtooth"; o.frequency.value = f; fl.type = "lowpass"; fl.frequency.setValueAtTime(900, t); fl.frequency.exponentialRampToValueAtTime(120, t + len); gn.gain.setValueAtTime(.34, t); gn.gain.exponentialRampToValueAtTime(.001, t + len); o.connect(fl); fl.connect(gn); gn.connect(pan(p)); o.start(t); o.stop(t + len + .02); }
 function kick(t) { const o = ac.createOscillator(), gn = ac.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + .13); gn.gain.setValueAtTime(.95, t); gn.gain.exponentialRampToValueAtTime(.001, t + .4); o.connect(gn); gn.connect(out); o.start(t); o.stop(t + .42); }
 function hat(t, p, open) { const len = open ? .16 : .05, n = Math.floor(ac.sampleRate * len), b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; const s = ac.createBufferSource(); s.buffer = b; const f = ac.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 7500; const gn = ac.createGain(); gn.gain.setValueAtTime(.22, t); gn.gain.exponentialRampToValueAtTime(.001, t + len); s.connect(f); f.connect(gn); gn.connect(pan(p)); s.start(t); s.stop(t + len); }
-function startMusic() {
-  if (!audio() || musicOn) return; musicOn = true; step = 0; nextT = ac.currentTime + .1;
-  // drone: two saws, one in each ear, a few Hz apart so they beat against each other
-  [[-1, 55], [1, 55.6]].forEach(([p, f]) => { const o = ac.createOscillator(), fl = ac.createBiquadFilter(), gn = ac.createGain(); o.type = "sawtooth"; o.frequency.value = f; fl.type = "lowpass"; fl.frequency.value = 380; gn.gain.value = .07; o.connect(fl); fl.connect(gn); gn.connect(pan(p * .9)); o.start(); });
-  const sec = 60 / 126 / 4;
-  loopTimer = setInterval(() => {
-    if (muted) { nextT = Math.max(nextT, ac.currentTime); return; }
-    while (nextT < ac.currentTime + .15) {
-      if (!techno) { step++; nextT += sec; continue; }
-      const i = step % 16, t = nextT;
-      if (i % 4 === 0) kick(t);
-      if (i % 4 === 2) { hat(t, (step >> 2) % 2 ? .8 : -.8, true); bass(t, [55, 55, 65.4, 49][(step >> 4) % 4], sec * 3.5, (step >> 3) % 2 ? .5 : -.5); }
-      if (i % 2 === 1 && phase >= 3) hat(t, i % 4 === 1 ? -.9 : .9, false);
-      step++; nextT += sec;
-    }
-  }, 30);
+
+// ---------- music engine: progressive, syncopated, stereo tricks ----------
+let mus = null, fx = null, padBus = null, bassBus = null, padRig = null, shepG = null, shepO = [], shepPhase = 0, shepRate = 0, music = null;
+const MBPM = 126, MSEC = 60 / MBPM / 4, CHORDS = [[220, 261.63, 329.63, 392], [174.61, 220, 261.63, 329.63], [261.63, 329.63, 392, 493.88], [196, 246.94, 293.66, 392]], ROOTS = [55, 43.65, 65.41, 49];
+const mvol = () => mode === "calm" ? .7 : mode === "intense" ? 1.15 : 1;
+function fixedPan(p, dest) { const n = ac.createStereoPanner ? ac.createStereoPanner() : null; if (!n) return dest; n.pan.value = clamp(p, -1, 1); n.connect(dest); return n; }
+function panM(p) { return fixedPan(p, mus); }
+function send(node, dest, amt) { const g2 = ac.createGain(); g2.gain.value = amt; node.connect(g2); g2.connect(dest); }
+// Haas trick: the same sound hits one ear first, the other 8 to 25 ms later, so it feels wide and placed
+function haas(src, side, ms, dest) { const dry = fixedPan(side, dest), d = ac.createDelay(.05); d.delayTime.value = ms / 1000; src.connect(dry); src.connect(d); d.connect(fixedPan(-side * .9, dest)); }
+function buildFx() {
+  mus = ac.createGain(); mus.gain.value = 1; mus.connect(out);
+  const len = ac.sampleRate * 2.8, ir = ac.createBuffer(2, len, ac.sampleRate);
+  for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.4) * Math.min(1, i / (ac.sampleRate * .02)); }
+  const rev = ac.createConvolver(); rev.buffer = ir; const revIn = ac.createGain(), revOut = ac.createGain(); revOut.gain.value = .5; revIn.connect(rev); rev.connect(revOut); revOut.connect(mus);
+  const dIn = ac.createGain(), dl = ac.createDelay(1.5), dr = ac.createDelay(1.5), f1 = ac.createGain(), f2 = ac.createGain(), lp = ac.createBiquadFilter(), dOut = ac.createGain();
+  dl.delayTime.value = dr.delayTime.value = MSEC * 3; f1.gain.value = f2.gain.value = .45; lp.type = "lowpass"; lp.frequency.value = 3000; dOut.gain.value = .5; dOut.connect(mus);
+  dIn.connect(lp); lp.connect(dl); dl.connect(f1); f1.connect(dr); dr.connect(f2); f2.connect(dl); dl.connect(fixedPan(-.9, dOut)); dr.connect(fixedPan(.9, dOut));
+  fx = { revIn, dIn };
+  padBus = ac.createGain(); padBus.connect(mus); send(padBus, revIn, .3); bassBus = ac.createGain(); bassBus.connect(mus);
+  // drone pair: one saw per ear, a few Hz apart, so the two tones beat against each other inside your head
+  [[-1, 55], [1, 55.6]].forEach(([p, f]) => { const o = ac.createOscillator(), fl = ac.createBiquadFilter(), gn = ac.createGain(); o.type = "sawtooth"; o.frequency.value = f; fl.type = "lowpass"; fl.frequency.value = 340; gn.gain.value = .05; o.connect(fl); fl.connect(gn); gn.connect(fixedPan(p * .9, mus)); o.start(); });
+  // pad: eight detuned saws, two groups that slowly swap sides, through a phaser (two allpass filters swept by an LFO)
+  const flt = ac.createBiquadFilter(); flt.type = "lowpass"; flt.frequency.value = 600; flt.Q.value = .8; const sum = ac.createGain(); sum.gain.value = .032; const ap1 = ac.createBiquadFilter(), ap2 = ac.createBiquadFilter();
+  ap1.type = ap2.type = "allpass"; ap1.frequency.value = 700; ap2.frequency.value = 1500; ap1.Q.value = ap2.Q.value = .9;
+  const l1 = ac.createOscillator(), lg1 = ac.createGain(), lg2 = ac.createGain(); l1.frequency.value = .08; lg1.gain.value = 450; lg2.gain.value = 900; l1.connect(lg1); l1.connect(lg2); lg1.connect(ap1.frequency); lg2.connect(ap2.frequency); l1.start();
+  sum.connect(flt); flt.connect(padBus); flt.connect(ap1); ap1.connect(ap2); ap2.connect(padBus);
+  const gL = ac.createGain(), gR = ac.createGain(), pL = ac.createStereoPanner ? ac.createStereoPanner() : null, pR = ac.createStereoPanner ? ac.createStereoPanner() : null;
+  if (pL) { pL.pan.value = -.45; pR.pan.value = .45; gL.connect(pL); gR.connect(pR); pL.connect(sum); pR.connect(sum); const l2 = ac.createOscillator(), a2 = ac.createGain(), a3 = ac.createGain(); l2.frequency.value = .11; a2.gain.value = .45; a3.gain.value = -.45; l2.connect(a2); l2.connect(a3); a2.connect(pL.pan); a3.connect(pR.pan); l2.start(); } else { gL.connect(sum); gR.connect(sum); }
+  const oscs = []; for (let k = 0; k < 4; k++) [[gL, .997], [gR, 1.003]].forEach(([grp, det]) => { const o = ac.createOscillator(); o.type = "sawtooth"; o.frequency.value = CHORDS[0][k] * det; o.connect(grp); o.start(); oscs.push([o, k, det]); });
+  padRig = { oscs, flt, sum };
+  // Shepard-Risset tone: six octave-spaced sines under a bell-shaped loudness curve, so the pitch seems to rise forever
+  shepG = ac.createGain(); shepG.gain.value = 0; shepG.connect(mus); send(shepG, revIn, .3); for (let i = 0; i < 6; i++) { const o = ac.createOscillator(), g2 = ac.createGain(); o.type = "sine"; o.frequency.value = 80; g2.gain.value = 0; o.connect(g2); g2.connect(shepG); o.start(); shepO.push({ o, g: g2 }); }
+  setInterval(() => { if (!ac || !shepG) return; const dt = .05; shepPhase = (((shepPhase + shepRate * dt) % 1) + 1) % 1; shepO.forEach((s, i) => { const pos = (i + shepPhase) % 6, f = 40 * Math.pow(2, pos), amp = Math.exp(-Math.pow((pos - 3) / 1.15, 2)); s.o.frequency.setTargetAtTime(f, ac.currentTime, .05); s.g.gain.setTargetAtTime(.5 * amp, ac.currentTime, .05); }); }, 50);
 }
+function kickM(t, v = 1) { const o = ac.createOscillator(), gn = ac.createGain(); o.frequency.setValueAtTime(155, t); o.frequency.exponentialRampToValueAtTime(42, t + .12); gn.gain.setValueAtTime(.9 * v, t); gn.gain.exponentialRampToValueAtTime(.001, t + .4); o.connect(gn); gn.connect(mus); o.start(t); o.stop(t + .42); const ck = ac.createOscillator(), cg = ac.createGain(); ck.type = "square"; ck.frequency.value = 1800; cg.gain.setValueAtTime(.05 * v, t); cg.gain.exponentialRampToValueAtTime(.001, t + .01); ck.connect(cg); cg.connect(mus); ck.start(t); ck.stop(t + .015); }
+function sideDuck(t, depth = .22) { [padBus.gain, bassBus.gain].forEach((gp) => { gp.cancelScheduledValues(t); gp.setTargetAtTime(depth, t, .004); gp.setTargetAtTime(1, t + .05, .09); }); }
+function noiseBuf(len) { const b = ac.createBuffer(1, Math.floor(ac.sampleRate * len), ac.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; }
+function clapM(t, v = 1, pn = 0) { const mix = ac.createGain(); mix.gain.value = .5 * v; [0, .011, .022].forEach((o, i) => { const s = ac.createBufferSource(); s.buffer = noiseBuf(.2); const f = ac.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 1400; f.Q.value = 1.1; const gn = ac.createGain(); gn.gain.setValueAtTime(i === 2 ? 1 : .6, t + o); gn.gain.exponentialRampToValueAtTime(.001, t + o + (i === 2 ? .16 : .02)); s.connect(f); f.connect(gn); gn.connect(mix); s.start(t + o); s.stop(t + o + .2); }); mix.connect(fixedPan(pn, mus)); send(mix, fx.revIn, .35); }
+function hatM(t, v, pn, open) { const len = open ? .2 : .05, s = ac.createBufferSource(); s.buffer = noiseBuf(len + .02); const f = ac.createBiquadFilter(); f.type = "highpass"; f.frequency.value = open ? 6500 : 8500; const gn = ac.createGain(); gn.gain.setValueAtTime(.2 * v, t); gn.gain.exponentialRampToValueAtTime(.001, t + len); s.connect(f); f.connect(gn); gn.connect(fixedPan(pn, mus)); if (open) send(gn, fx.revIn, .25); s.start(t); s.stop(t + len + .02); }
+function bassM(t, f, len, v = 1, open = .5) { const o = ac.createOscillator(), o2 = ac.createOscillator(), fl = ac.createBiquadFilter(), gn = ac.createGain(); o.type = "sawtooth"; o.frequency.value = f; o2.type = "sine"; o2.frequency.value = f / 2; fl.type = "lowpass"; fl.Q.value = 6; fl.frequency.setValueAtTime(250 + open * 1700, t); fl.frequency.exponentialRampToValueAtTime(90, t + len); gn.gain.setValueAtTime(.26 * v, t); gn.gain.exponentialRampToValueAtTime(.001, t + len); o.connect(fl); o2.connect(gn); fl.connect(gn); gn.connect(bassBus); o.start(t); o2.start(t); o.stop(t + len + .02); o2.stop(t + len + .02); }
+function arpM(t, f, side, v = 1) { const o = ac.createOscillator(), gn = ac.createGain(); o.type = "triangle"; o.frequency.value = f; gn.gain.setValueAtTime(0, t); gn.gain.linearRampToValueAtTime(.12 * v, t + .004); gn.gain.exponentialRampToValueAtTime(.001, t + .2); o.connect(gn); haas(gn, side, 14, mus); send(gn, fx.dIn, .6); send(gn, fx.revIn, .25); o.start(t); o.stop(t + .24); }
+function thump(t, v = 1) { const o = ac.createOscillator(), gn = ac.createGain(); o.frequency.setValueAtTime(62, t); o.frequency.exponentialRampToValueAtTime(34, t + .15); gn.gain.setValueAtTime(.7 * v, t); gn.gain.exponentialRampToValueAtTime(.001, t + .3); o.connect(gn); gn.connect(mus); o.start(t); o.stop(t + .32); }
+function riser(t, dur, v = 1) { const s = ac.createBufferSource(), b = noiseBuf(dur), d = b.getChannelData(0); d.reverse(); s.buffer = b; const f = ac.createBiquadFilter(); f.type = "highpass"; f.frequency.setValueAtTime(400, t); f.frequency.exponentialRampToValueAtTime(7000, t + dur); const gn = ac.createGain(); gn.gain.setValueAtTime(.001, t); gn.gain.exponentialRampToValueAtTime(.3 * v, t + dur); gn.gain.linearRampToValueAtTime(0, t + dur + .02); const pn = ac.createStereoPanner ? ac.createStereoPanner() : null; s.connect(f); f.connect(gn); if (pn) { pn.pan.setValueAtTime(-1, t); pn.pan.linearRampToValueAtTime(1, t + dur); gn.connect(pn); pn.connect(mus); } else gn.connect(mus); send(gn, fx.revIn, .3); s.start(t); s.stop(t + dur + .03); }
+// a bell that orbits your head (HRTF 3D panner, so on headphones it really seems to circle behind you)
+function ghostBell(t, f, v = 1) { const pn = ac.createPanner(); pn.panningModel = "HRTF"; pn.distanceModel = "inverse"; pn.refDistance = 1.2; const out2 = ac.createGain(); out2.gain.value = .5 * v; out2.connect(pn); pn.connect(mus); send(out2, fx.revIn, .5);
+  [[1, 1, 3.2], [2.76, .5, 2.2], [5.4, .25, 1.4], [8.93, .12, .8]].forEach(([m, a, d]) => { const o = ac.createOscillator(), gn = ac.createGain(); o.frequency.value = f * m * (1 + (Math.random() - .5) * .004); gn.gain.setValueAtTime(0, t); gn.gain.linearRampToValueAtTime(.12 * a, t + .004); gn.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(gn); gn.connect(out2); o.start(t); o.stop(t + d + .05); });
+  if (pn.positionX) { const dir = Math.random() < .5 ? 1 : -1; for (let i = 0; i <= 24; i++) { const th = dir * i / 24 * 6.2832 + 3.1416; pn.positionX.setValueAtTime(Math.sin(th) * 2.2, t + i * .13); pn.positionZ.setValueAtTime(-Math.cos(th) * 2.2, t + i * .13); } } }
+function whisper(t, v = 1) { const s = ac.createBufferSource(); s.buffer = noiseBuf(1.8); const gn = ac.createGain(), dry = fixedPan((Math.random() * 2 - 1) * .9, mus); gn.gain.value = 0; [[700, 7], [1700, 9], [3100, 12]].forEach(([fq, q], i) => { const f = ac.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = fq * (1 + (Math.random() - .5) * .2); f.Q.value = q; const fg = ac.createGain(); fg.gain.value = [1, .8, .35][i]; s.connect(f); f.connect(fg); fg.connect(gn); }); [0, .38, .7].forEach((o, i) => { gn.gain.setValueAtTime(0, t + o); gn.gain.linearRampToValueAtTime(.6 * v * (1 - i * .2), t + o + .1); gn.gain.linearRampToValueAtTime(0, t + o + .32); }); gn.connect(dry); send(gn, fx.revIn, 1.2); s.start(t); s.stop(t + 1.8); }
+let mstep = 0, mnext = 0, mtimer = 0, arpSide = 1;
+function schedStep() {
+  const t = mnext, bar = Math.floor(mstep / 16), b = bar % 48, s = mstep % 16, sect = b < 8 ? 0 : b < 16 ? 1 : b < 32 ? 2 : b < 40 ? 3 : 4, ci = Math.floor(bar / 4) % 4, ch = CHORDS[ci], root = ROOTS[ci], V = mvol();
+  const kickOn = (sect === 1 && b >= 10) || sect === 2 || (sect === 4 && b >= 44), bassOn = (sect === 1 && b >= 10) || sect === 2 || (sect === 4 && b >= 42), clapOn = (sect === 1 && b >= 12) || sect === 2 || (sect === 4 && b >= 44);
+  const inten = [.25, .6, 1, .4, .75][sect] + (sect === 1 ? (b - 8) / 8 * .3 : 0), jit = () => (Math.random() - .5) * .006, sw = s % 2 ? .006 : 0, T = t + sw;
+  if (!techno) { padRig.flt.frequency.setTargetAtTime(500, t, .5); padBus.gain.setTargetAtTime(.35, t, .5); shepG.gain.setTargetAtTime(0, t, .5); mstep++; mnext += MSEC; return; }
+  if (s === 0) {
+    padRig.oscs.forEach(([o, k, det]) => { if (b % 4 === 0 || mstep === 0) o.frequency.setTargetAtTime(ch[k] * det, t, .3); });
+    padRig.flt.frequency.setTargetAtTime(450 + inten * 2400, t, 1.2); if (!kickOn) padBus.gain.setTargetAtTime(1, t, .3);
+    shepG.gain.setTargetAtTime(sect === 3 || (sect === 4 && b < 42) ? .3 * V : 0, t, 1.5); shepRate = sect === 3 ? .11 : sect === 4 ? -.14 : 0;
+    if (b % 16 === 15) riser(t, MSEC * 16, V); if (b === 32) { thump(t, 1.2); ghostBell(t, 440 * Math.pow(2, 3 / 12), V); }
+    if (mode !== "calm" && (sect === 0 || sect === 3 || sect === 1) && Math.random() < .35) whisper(t + Math.random() * MSEC * 10, V * .9);
+    if ((sect === 3 && b % 2 === 1) || (sect === 0 && b % 4 === 3) || (sect === 4 && b === 40)) ghostBell(t + MSEC * 2, ch[Math.floor(Math.random() * 4)] * (Math.random() < .5 ? 2 : 4), V * .8);
+  }
+  // kick: four on the floor with ghost notes that move around the bar
+  if (kickOn) { if (s % 4 === 0 && !(b % 8 === 7 && s === 12)) { kickM(T, V); sideDuck(T, .2); } else if (b % 4 === 1 && s === 7) { kickM(T, .45 * V); sideDuck(T, .5); } else if (b % 4 === 3 && (s === 10 || s === 15)) { kickM(T, .4 * V); sideDuck(T, .55); } }
+  if (sect === 3 && s % 8 === 0) { thump(T, .5 * V); thump(T + MSEC * 1.5, .3 * V); }
+  if (clapOn) { if (s === 4 || s === 12) clapM(T, V, s === 4 ? -.15 : .15); if (b % 4 === 3 && s === 15) clapM(T, .35 * V, .5); }
+  // bass: 3+3+2, with an octave jump now and then
+  if (bassOn && [0, 3, 6, 8, 11, 14].includes(s)) { const oct = (s === 14 && b % 2) || (s === 6 && b % 4 === 3) ? 2 : 1; bassM(T, root * oct, MSEC * (s === 14 ? 1.4 : 2.4), V, inten * (.5 + .5 * Math.sin(mstep / 23))); }
+  // hats: offbeat open, ghost sixteenths, left and right traded back and forth
+  const hv = [0, .22, .9, .22, 0, .3, .9, .25, 0, .22, .9, .4, 0, .3, .9, .5][s];
+  if (hv && (sect !== 0 || b >= 4) && (sect !== 3 || s % 4 === 2)) hatM(T + jit(), hv * V * (sect === 0 ? .6 : 1), s % 2 ? .6 : -.6, s === 14 && b % 2 === 1);
+  // arpeggio on a 5-step cycle over the 16-step bar, so it keeps shifting against the beat
+  if ((sect >= 1 || b >= 4) && (sect !== 2 || mstep % 5 !== 3 || b % 2)) { if (mstep % 5 < 4 || sect === 2) { const k = [0, 2, 1, 3, 2][mstep % 5], oct = ((mstep >> 2) % 2) ? 4 : 2; arpSide = -arpSide; arpM(T, ch[k] * oct, arpSide * .8, V * (sect === 0 ? .55 : sect === 3 ? .8 : 1)); } }
+  mstep++; mnext += MSEC;
+}
+function startMusic() {
+  if (!audio() || musicOn) return; musicOn = true; if (!mus) buildFx(); mstep = window.__startStep || 0; mnext = ac.currentTime + .15;
+  mtimer = setInterval(() => { if (muted) { mnext = Math.max(mnext, ac.currentTime); return; } while (mnext < ac.currentTime + .18) schedStep(); }, 30);
+}
+function setMusicLevel(v) { if (mus && ac) mus.gain.setTargetAtTime(v, ac.currentTime, .3); }
+
 function catReveal() {
   if (!audio() || muted) return; const t = ac.currentTime;
   whoosh(-1, 1.6);
@@ -451,12 +515,12 @@ function speakLine() {
   if (muted || !("speechSynthesis" in window)) return; try { const u = new SpeechSynthesisUtterance("Six minutes. Sixty six seconds. I have been watching you."); u.rate = .78; u.pitch = .3; u.volume = .9; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) {}
 }
 function startHorror() {
-  horror = { t0: performance.now() }; horrorDone = true; $("skip").hidden = false;
+  horror = { t0: performance.now() }; horrorDone = true; setMusicLevel(.12); $("skip").hidden = false;
   $("cap").textContent = "6:66"; $("sub").textContent = mode === "calm" ? "You have been here a while. The wall is still listening." : "You were not supposed to stay this long.";
   if (mode !== "calm") { horrorSound(); setTimeout(speakLine, 3800); }
 }
 function endHorror() {
-  if (!horror) return; horror = null; $("skip").hidden = true; try { speechSynthesis.cancel(); } catch (e) {}
+  if (!horror) return; horror = null; setMusicLevel(1); $("skip").hidden = true; try { speechSynthesis.cancel(); } catch (e) {}
   horrorNodes.forEach((n) => { try { n.stop(); } catch (e) {} }); horrorNodes = [];
   say(Math.min(phase, CAP.length - 1));
 }
