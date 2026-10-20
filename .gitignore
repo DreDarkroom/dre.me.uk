@@ -5,3 +5,7 @@ node_modules/
 .wrangler/
 .DS_Store
 *.log
+
+# daz-log reports (default location is outside the repo)
+reports/
+__pycache__/

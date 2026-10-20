@@ -79,3 +79,8 @@ This is a documented issue on Dre's machine and was not reproduced by the AI. Qu
 1. Listen to the v8 score and say keep / change / revert.
 2. Say whether PR #10 should be merged.
 3. Decide where the public experiment should live (clickfiction or another host) and who sets up DNS.
+
+## 2026-10-20: daz-log (local daily summaries)
+- Added `tools/daz-log/`: a standard-library Python script that writes one Markdown summary per day from Git history and, optionally, a local ActivityWatch server. See its README for privacy, limits and how to run it.
+- **Verified (Linux cloud sandbox):** 7 unit tests pass, including idempotent re-runs, AFK intersection and window titles never reaching the report, using a fake local server. A real run over this repo for 2026-10-19 listed the 9 commits of that day.
+- **Not verified:** any real ActivityWatch install (none reachable from the sandbox), Windows, and the scheduled-task commands. Nothing is scheduled or enabled.
