@@ -1,0 +1,23 @@
+# Local helpers for the DazzleDre repo. Nothing here deploys anything or talks to Cloudflare.
+#   docker compose run --rm tests     run the regression tests in a clean container
+#   docker compose up serve           preview labs/ at http://localhost:8080/ (try /mallard/)
+#   docker compose run --rm dryrun    check the Cloudflare Worker config without deploying (no login needed)
+services:
+  tests:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.tests
+    ipc: host            # recommended by Playwright for Chromium in containers
+    profiles: ["tools"]
+  serve:
+    image: nginx:alpine
+    ports: ["8080:80"]
+    volumes:
+      - ./labs:/usr/share/nginx/html:ro
+  dryrun:
+    image: node:22
+    working_dir: /repo
+    volumes:
+      - .:/repo:ro
+    command: ["npx", "--yes", "wrangler@4", "deploy", "--dry-run", "--outdir", "/tmp/out", "-c", "deploy/dazzle/wrangler.jsonc"]
+    profiles: ["tools"]
