@@ -37,7 +37,7 @@ State found:
 - `main` contains `labs/` with the index, Beat Match, Beat Match Roads and Mallard (up to the Wonderland scene). Homepage `index.html` is the original links page.
 - Draft PR #10 (music engine) is open and not merged.
 - Other open draft PRs in the repo belong to other sessions (shop prototype, Greentea Peng tribute, wobbly collab page, MULE game, DreDOS v0.1 marked "do not merge"). They were not touched.
-- A front-door Worker (`dre-front-door`) is described in PR #7 as serving `dre.me.uk`, with Dub as fallthrough. So merging files to this repo does not by itself make a `/labs/` page appear on `dre.me.uk`.
+- The domain dre.me.uk is served through Cloudflare and Dub, so files in this repo may not appear there. (Details are kept in the private repo.)
 - A public URL for `labs/mallard/` was **not verified**: the AI sandbox cannot reach `dre.me.uk` or the github.io address (connection refused by its proxy).
 Regression evidence (headless Chromium, fake clock fast-forward, branch head): phases 1 to 8 advance, games 0 to 5 advance, the end card appears, the 6:66 robot appears and ends. No page errors.
 
@@ -57,9 +57,9 @@ Built at Dre's request as the recommended next milestone (and a workaround for t
 
 ## 2026-10-19: names, domain, Cloudflare probe, AI briefing pack
 - Dre chose: universe **DazzleDre//\DreDazzle**, short name **Daz**, slug `DazzleDre-DreDazzle`, domain **dazzle.dredarkroom.com**, planned Dub short link `dre.me.uk/daz`. Words to use later: stellar, discombobulated, transmogrify. Recorded in `ROADMAP.md`.
-- **Cloudflare probe (read-only):** about 15 Workers exist. `dre-front-door` code read: `/` is served from a Pages landing project, `/_/posts.json` returns blog posts, all other paths pass through to Dub. No Worker named `dazzledre`, `dre-labs` or `dredos` exists. No DNS or zone tools are available, so zone ownership of `dredarkroom.com` and existing DNS records are unknown.
+- **Cloudflare probe (read-only):** done; findings are recorded in the private repo. No DNS or zone tools are available to the AI, so zone ownership and existing DNS records were not checked.
 - **Deploy config** moved from `deploy/labs` (labs.dre.me.uk) to `deploy/dazzle` (dazzle.dredarkroom.com). Dry run clean. Not deployed.
-- **AI briefing pack** written to `docs/dazzledre/AI-PACK.md` (shared context, handoff protocol, tasks for ChatGPT as orchestrator, Gemini, Dola, Jules (about 3 hours) and an optional Antigravity prompt). Placed outside `labs/` so a labs deployment does not publish it.
+- **AI briefing pack** written (shared context, handoff protocol, tasks for ChatGPT as orchestrator, Gemini, Dola, Jules and an optional Antigravity prompt). It is kept in the private repo, not here.
 - **Not possible from here:** setting up Antigravity (a separate Google IDE with no connection to this session), contacting other AIs, DNS or Dub changes.
 
 ## Known blockers

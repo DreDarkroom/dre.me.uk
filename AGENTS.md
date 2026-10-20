@@ -1,6 +1,6 @@
 # AGENTS.md: instructions for AI coding agents (Jules, Codex, Claude Code, Antigravity and others)
 
-Project: **DazzleDre//\DreDazzle** (short name **Daz**). First chapter: Mallard Protocol (`labs/mallard/`). Human director: Dre (DreDarkroom). Read `docs/dazzledre/AI-PACK.md` Parts A, B and the part addressed to you before changing anything.
+Project: **DazzleDre//\DreDazzle** (short name **Daz**). First chapter: Mallard Protocol (`labs/mallard/`). Human director: Dre (DreDarkroom). The AI briefing pack (AI-PACK.md), task queue and overnight rules live in the private repository `DreDarkroom/DazzleDre-DreDazzle`, not here. If you do not have them, ask Dre before changing anything.
 
 ## Rules that always apply
 1. Work on a branch and open a draft pull request. Never push to `main`. Never merge your own pull request.
@@ -11,7 +11,7 @@ Project: **DazzleDre//\DreDazzle** (short name **Daz**). First chapter: Mallard 
 6. Original work only: no copied tracks, arrangements, characters or images. Record the licence of anything third-party.
 7. Preserve what works: add, do not replace. Keep `labs/mallard/index.html` behaviour identical unless the task says otherwise. One workstream at a time.
 8. UK English. Never write "coming soon". Spell DevelopDrop exactly like that.
-9. End every report with a HANDOFF BLOCK (format in `docs/dazzledre/AI-PACK.md`, Part B).
+9. End every report with a HANDOFF BLOCK (format in the private repo's AI-PACK.md, Part B).
 
 ## How to check your work
 ```
@@ -24,9 +24,9 @@ Or `docker compose run --rm tests` from the repo root (see `docker/README.md`). 
 
 ## Where things are
 - `labs/mallard/index.html`: the playable experience (one file). `labs/mallard/*.md`: README, DEVLOG, ROADMAP, BLUEPRINT.
-- `docs/dazzledre/`: AI-PACK.md (briefing), QUEUE.md (small tasks to try next), OVERNIGHT.md (rules for unattended runs).
+- The briefing (AI-PACK.md), task queue (QUEUE.md) and overnight rules (OVERNIGHT.md) are in the private repo.
 - `deploy/dazzle/`: Cloudflare Worker config for dazzle.dredarkroom.com (not deployed).
 - Useful test hooks in the page: `window.__startStep` (set before load: start the score at bar*16), globals `phase`, `game`, `horror`, `MB` (music event bus), `go(n)`, `startGames()`.
 
 ## When you finish
-Update `labs/mallard/DEVLOG.md` (additive), tick the item in `docs/dazzledre/QUEUE.md` only if you have evidence, and open a draft pull request describing what you verified and what you could not.
+Update `labs/mallard/DEVLOG.md` (additive), tick the item in the private repo's QUEUE.md only if you have evidence, and open a draft pull request describing what you verified and what you could not.

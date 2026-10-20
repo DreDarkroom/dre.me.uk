@@ -33,7 +33,7 @@ Nothing flashes more than 3 times per second. A warning screen offers Calm, Full
 Working prototype, version 10 (v9 plus an in-page **Record** button that saves the picture and the page's audio to a video file on the device; v9 was the v8 score plus a first audio-reactive step: a music event bus driving a small dial, an orbiting-bell marker and section colour shifts): toy duck, cyborg reveal, three illusions, manga cat reveal, five mini games (Echo, Odd eye, Labyrinth, Beat lock, Starship), Wonderland scene, 6:66 robot, and a new 48-bar progressive score. See `DEVLOG.md` for what is verified and what is not.
 
 ## Outstanding blockers
-1. **Deployment not verified.** The files are in the repo, but nobody has confirmed a public URL that serves them. `dre.me.uk` is handled by a front-door Worker and Dub, so a repo page may not appear there.
+1. **Deployment not verified.** The files are in the repo, but nobody has confirmed a public URL that serves them. `dre.me.uk` is served through Cloudflare and Dub, so a repo page may not appear there.
 2. **Audio capture for screen recordings.** OBS is not capturing the project's audio correctly (documented issue). The in-page Record button is a workaround; it has not yet been tried on Dre's machine. The robot's spoken line is not captured by it.
 3. **No Cloudflare, DNS or domain access** for the AI session, so no subdomain (for example on clickfiction) has been created.
 4. **NOT A CULT logo and photos** have not been used: the build sandbox could not reach notacult.co.uk.

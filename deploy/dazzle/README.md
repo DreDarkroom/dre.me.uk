@@ -28,7 +28,7 @@ Status: **config only. Not deployed.** Nothing here has touched Cloudflare, DNS 
 4. Verify: open `https://dazzle.dredarkroom.com/` and `https://dazzle.dredarkroom.com/mallard/`, or run `curl -I https://dazzle.dredarkroom.com/` and expect `200`. Certificates can take a few minutes.
 
 ## Notes
-- This does not touch the `dre-front-door` Worker or Dub, which serve `dre.me.uk`.
+- This does not touch the Worker or Dub setup that serves `dre.me.uk`.
 - To undo: delete the `dazzledre` Worker and its custom domain in the Cloudflare dashboard.
 - Everything under `labs/` becomes public once deployed (pages carry `noindex`, but that only asks search engines to skip them).
 - Known small issue: on Beat Match the "Labs" link is hidden behind the Start screen until you press Start.
