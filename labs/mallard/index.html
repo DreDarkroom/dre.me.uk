@@ -21,6 +21,14 @@ canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;display:b
 #sub{color:var(--dim);font-size:.85rem;margin-top:.2rem;min-height:1.3rem;text-shadow:0 1px 8px #000}
 #top{position:fixed;top:0;left:0;right:0;z-index:3;display:flex;justify-content:space-between;gap:.5rem;padding:max(.7rem,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));pointer-events:none}
 .pill{pointer-events:auto;font:600 .78rem "DM Sans",sans-serif;color:var(--text);background:rgba(10,6,16,.65);border:1px solid rgba(255,255,255,.2);border-radius:2rem;padding:.45rem .9rem;min-height:2.2rem;cursor:pointer;touch-action:manipulation}
+.grp{display:flex;gap:.5rem}
+#rec[aria-pressed=true]{border-color:#ff4060;color:#ff9aab}
+#recbox{position:fixed;left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));bottom:max(1rem,env(safe-area-inset-bottom,0px));z-index:8;max-width:30rem;margin:0 auto;background:rgba(10,6,16,.92);border:1px solid rgba(255,255,255,.22);border-radius:.9rem;padding:.8rem}
+#recbox[hidden]{display:none}
+#recbox video{width:100%;max-height:38vh;background:#000;border-radius:.5rem;display:block}
+#recbox p{margin:.3rem 0;color:var(--dim);font-size:.85rem}
+#recbox .row2{display:flex;gap:.5rem;margin-top:.5rem}
+#recbox .row2 .btn{flex:1;text-align:center;min-height:2.6rem}
 .pill:focus-visible,.btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
 #gate{position:fixed;inset:0;z-index:9;background:#0a0610;display:flex;align-items:center;justify-content:center;padding:1rem max(16px,env(safe-area-inset-left,0px));overflow:auto}
 #gate[hidden]{display:none}
@@ -39,10 +47,11 @@ label.ck input{margin-top:.25rem;width:1.1rem;height:1.1rem}
 @media (prefers-reduced-motion:reduce){#cap{transition:none}}
 </style>
 <canvas id="c" aria-label="A yellow rubber duck. Tap it."></canvas>
-<div id="top"><button class="pill" id="snd" aria-pressed="false">Sound on</button><button class="pill" id="help">Gestures</button></div>
+<div id="top"><button class="pill" id="snd" aria-pressed="false">Sound on</button><div class="grp"><button class="pill" id="rec" aria-pressed="false" title="Record the picture and the sound to a video file on this device">● Record</button><button class="pill" id="help">Gestures</button></div></div>
 <div id="hint" role="note"><b>Touch</b><br>Tap duck: squeak<br>Double tap: wake it<br>Triple tap: open it<br>1 finger drag: steer<br>2 finger swipe: change colour<br>3 finger swipe: warp time<br><b>Keys</b> 1 / 2 / 3 do the taps, arrows steer.</div>
 <button class="pill" id="skip" hidden style="position:fixed;z-index:8;right:max(16px,env(safe-area-inset-right,0px));top:3.4rem">Skip</button>
 <div id="hud"><div id="cap"></div><div id="sub"></div></div>
+<div id="recbox" hidden role="dialog" aria-label="Recording"><p id="recmsg"></p><video id="recvid" controls playsinline></video><div class="row2"><button class="btn main" id="recsave">Save video</button><button class="btn" id="recclose">Close</button></div></div>
 <div id="gate" role="dialog" aria-modal="true" aria-labelledby="gt">
   <div>
     <h1 id="gt">Mallard Protocol</h1>
@@ -87,12 +96,12 @@ const CAP = [
 function say(i) { if (typeof horror !== "undefined" && horror) return; $("cap").textContent = CAP[i][0]; $("sub").textContent = CAP[i][1]; }
 
 // ---------- audio ----------
-let ac = null, out = null, muted = false, drone = null, loopTimer = 0, step = 0, nextT = 0, musicOn = false, kickGain = null;
+let masterNode = null; let ac = null, out = null, muted = false, drone = null, loopTimer = 0, step = 0, nextT = 0, musicOn = false, kickGain = null;
 function audio() {
   if (ac) { if (ac.state === "suspended") ac.resume(); return true; }
   const A = window.AudioContext || window.webkitAudioContext; if (!A) return false;
   ac = new A(); out = ac.createGain(); out.gain.value = mode === "intense" ? .95 : mode === "calm" ? .5 : .75;
-  const comp = ac.createDynamicsCompressor(); out.connect(comp); comp.connect(ac.destination); return true;
+  const comp = ac.createDynamicsCompressor(); out.connect(comp); comp.connect(ac.destination); masterNode = comp; return true;
 }
 function pan(p) { const n = ac.createStereoPanner ? ac.createStereoPanner() : null; if (n) { n.pan.value = Math.max(-1, Math.min(1, p)); n.connect(out); return n; } return out; }
 function squeak(px) {
@@ -159,15 +168,18 @@ function riser(t, dur, v = 1) { const s = ac.createBufferSource(), b = noiseBuf(
 // a bell that orbits your head (HRTF 3D panner, so on headphones it really seems to circle behind you)
 function ghostBell(t, f, v = 1) { const pn = ac.createPanner(); pn.panningModel = "HRTF"; pn.distanceModel = "inverse"; pn.refDistance = 1.2; const out2 = ac.createGain(); out2.gain.value = .5 * v; out2.connect(pn); pn.connect(mus); send(out2, fx.revIn, .5);
   [[1, 1, 3.2], [2.76, .5, 2.2], [5.4, .25, 1.4], [8.93, .12, .8]].forEach(([m, a, d]) => { const o = ac.createOscillator(), gn = ac.createGain(); o.frequency.value = f * m * (1 + (Math.random() - .5) * .004); gn.gain.setValueAtTime(0, t); gn.gain.linearRampToValueAtTime(.12 * a, t + .004); gn.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(gn); gn.connect(out2); o.start(t); o.stop(t + d + .05); });
-  if (pn.positionX) { const dir = Math.random() < .5 ? 1 : -1; for (let i = 0; i <= 24; i++) { const th = dir * i / 24 * 6.2832 + 3.1416; pn.positionX.setValueAtTime(Math.sin(th) * 2.2, t + i * .13); pn.positionZ.setValueAtTime(-Math.cos(th) * 2.2, t + i * .13); } } }
+  const dir = Math.random() < .5 ? 1 : -1; emit({ t: t, type: "bell", dir: dir, f: f });
+  if (pn.positionX) { for (let i = 0; i <= 24; i++) { const th = dir * i / 24 * 6.2832 + 3.1416; pn.positionX.setValueAtTime(Math.sin(th) * 2.2, t + i * .13); pn.positionZ.setValueAtTime(-Math.cos(th) * 2.2, t + i * .13); } } }
 function whisper(t, v = 1) { const s = ac.createBufferSource(); s.buffer = noiseBuf(1.8); const gn = ac.createGain(), dry = fixedPan((Math.random() * 2 - 1) * .9, mus); gn.gain.value = 0; [[700, 7], [1700, 9], [3100, 12]].forEach(([fq, q], i) => { const f = ac.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = fq * (1 + (Math.random() - .5) * .2); f.Q.value = q; const fg = ac.createGain(); fg.gain.value = [1, .8, .35][i]; s.connect(f); f.connect(fg); fg.connect(gn); }); [0, .38, .7].forEach((o, i) => { gn.gain.setValueAtTime(0, t + o); gn.gain.linearRampToValueAtTime(.6 * v * (1 - i * .2), t + o + .1); gn.gain.linearRampToValueAtTime(0, t + o + .32); }); gn.connect(dry); send(gn, fx.revIn, 1.2); s.start(t); s.stop(t + 1.8); }
 let mstep = 0, mnext = 0, mtimer = 0, arpSide = 1;
 function schedStep() {
   const t = mnext, bar = Math.floor(mstep / 16), b = bar % 48, s = mstep % 16, sect = b < 8 ? 0 : b < 16 ? 1 : b < 32 ? 2 : b < 40 ? 3 : 4, ci = Math.floor(bar / 4) % 4, ch = CHORDS[ci], root = ROOTS[ci], V = mvol();
   const kickOn = (sect === 1 && b >= 10) || sect === 2 || (sect === 4 && b >= 44), bassOn = (sect === 1 && b >= 10) || sect === 2 || (sect === 4 && b >= 42), clapOn = (sect === 1 && b >= 12) || sect === 2 || (sect === 4 && b >= 44);
   const inten = [.25, .6, 1, .4, .75][sect] + (sect === 1 ? (b - 8) / 8 * .3 : 0), jit = () => (Math.random() - .5) * .006, sw = s % 2 ? .006 : 0, T = t + sw;
+  if (techno) emit({ t: T, type: "step", s: s });
   if (!techno) { padRig.flt.frequency.setTargetAtTime(500, t, .5); padBus.gain.setTargetAtTime(.35, t, .5); shepG.gain.setTargetAtTime(0, t, .5); mstep++; mnext += MSEC; return; }
   if (s === 0) {
+    emit({ t: t, type: "bar", bar: bar, sect: sect });
     padRig.oscs.forEach(([o, k, det]) => { if (b % 4 === 0 || mstep === 0) o.frequency.setTargetAtTime(ch[k] * det, t, .3); });
     padRig.flt.frequency.setTargetAtTime(450 + inten * 2400, t, 1.2); if (!kickOn) padBus.gain.setTargetAtTime(1, t, .3);
     shepG.gain.setTargetAtTime(sect === 3 || (sect === 4 && b < 42) ? .3 * V : 0, t, 1.5); shepRate = sect === 3 ? .11 : sect === 4 ? -.14 : 0;
@@ -176,7 +188,7 @@ function schedStep() {
     if ((sect === 3 && b % 2 === 1) || (sect === 0 && b % 4 === 3) || (sect === 4 && b === 40)) ghostBell(t + MSEC * 2, ch[Math.floor(Math.random() * 4)] * (Math.random() < .5 ? 2 : 4), V * .8);
   }
   // kick: four on the floor with ghost notes that move around the bar
-  if (kickOn) { if (s % 4 === 0 && !(b % 8 === 7 && s === 12)) { kickM(T, V); sideDuck(T, .2); } else if (b % 4 === 1 && s === 7) { kickM(T, .45 * V); sideDuck(T, .5); } else if (b % 4 === 3 && (s === 10 || s === 15)) { kickM(T, .4 * V); sideDuck(T, .55); } }
+  if (kickOn) { if (s % 4 === 0 && !(b % 8 === 7 && s === 12)) { kickM(T, V); sideDuck(T, .2); emit({ t: T, type: "kick" }); } else if (b % 4 === 1 && s === 7) { kickM(T, .45 * V); sideDuck(T, .5); } else if (b % 4 === 3 && (s === 10 || s === 15)) { kickM(T, .4 * V); sideDuck(T, .55); } }
   if (sect === 3 && s % 8 === 0) { thump(T, .5 * V); thump(T + MSEC * 1.5, .3 * V); }
   if (clapOn) { if (s === 4 || s === 12) clapM(T, V, s === 4 ? -.15 : .15); if (b % 4 === 3 && s === 15) clapM(T, .35 * V, .5); }
   // bass: 3+3+2, with an octave jump now and then
@@ -185,7 +197,7 @@ function schedStep() {
   const hv = [0, .22, .9, .22, 0, .3, .9, .25, 0, .22, .9, .4, 0, .3, .9, .5][s];
   if (hv && (sect !== 0 || b >= 4) && (sect !== 3 || s % 4 === 2)) hatM(T + jit(), hv * V * (sect === 0 ? .6 : 1), s % 2 ? .6 : -.6, s === 14 && b % 2 === 1);
   // arpeggio on a 5-step cycle over the 16-step bar, so it keeps shifting against the beat
-  if ((sect >= 1 || b >= 4) && (sect !== 2 || mstep % 5 !== 3 || b % 2)) { if (mstep % 5 < 4 || sect === 2) { const k = [0, 2, 1, 3, 2][mstep % 5], oct = ((mstep >> 2) % 2) ? 4 : 2; arpSide = -arpSide; arpM(T, ch[k] * oct, arpSide * .8, V * (sect === 0 ? .55 : sect === 3 ? .8 : 1)); } }
+  if ((sect >= 1 || b >= 4) && (sect !== 2 || mstep % 5 !== 3 || b % 2)) { if (mstep % 5 < 4 || sect === 2) { const k = [0, 2, 1, 3, 2][mstep % 5], oct = ((mstep >> 2) % 2) ? 4 : 2; arpSide = -arpSide; arpM(T, ch[k] * oct, arpSide * .8, V * (sect === 0 ? .55 : sect === 3 ? .8 : 1)); emit({ t: T, type: "arp", n: mstep % 5, k: k }); } }
   mstep++; mnext += MSEC;
 }
 function startMusic() {
@@ -492,11 +504,40 @@ function frame(now) {
     const gl = (Math.sin(now / 120) + 1) / 2; g.fillStyle = hsl(hue, 100, 55, .12 * gl * K()); g.fillRect(0, (now / 5) % H, W, 10);
   }
   if (phase >= 6) { /* vignette */ const v = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .3, W / 2, H / 2, Math.max(W, H) * .8); v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,.7)"); g.fillStyle = v; g.fillRect(0, 0, W, H); }
+  if (musicOn && techno) { vizTick(); drawViz(now); }
   if (horror) drawHorror(now); else if (!horrorDone && now - t0 > HORROR_AT) startHorror();
+  if (recorder && recorder.state === "recording") drawCaps();
   auto(now); requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
 
+
+
+// ---------- shared music event bus: the score tells the picture what just happened ----------
+// Events are stamped with the audio time they will be HEARD and released when the audio clock (minus output latency) reaches them,
+// the same rule DevelopDrop uses, so the picture lines up with what you hear rather than with what was scheduled.
+const MB = { events: [], arp: [0, 0, 0, 0, 0], step: -1, kick: 0, bell: null, sect: 0, bar: 0, seen: {} };
+function emit(e) { if (MB.events.length > 400) MB.events.splice(0, 200); MB.events.push(e); }
+function vizTick() {
+  if (!ac) return; const now = ac.currentTime - (ac.outputLatency || ac.baseLatency || 0), q = MB.events; let i = 0;
+  while (i < q.length && q[i].t <= now) {
+    const e = q[i++]; MB.seen[e.type] = (MB.seen[e.type] || 0) + 1;
+    if (e.type === "step") MB.step = e.s; else if (e.type === "arp") MB.arp[e.n] = 1; else if (e.type === "kick") MB.kick = 1; else if (e.type === "bell") MB.bell = e;
+    else if (e.type === "bar") { MB.bar = e.bar; MB.sect = e.sect; if ([8, 16, 32, 40].includes(e.bar % 48)) hueT += 50; }
+  }
+  q.splice(0, i); for (let k = 0; k < 5; k++) MB.arp[k] *= .9; MB.kick *= .88;
+}
+// a small dial that shows the maths: 16 ticks for the bar, 5 pips for the arpeggio cycle that slides against it
+function drawViz(now) {
+  const cx = W / 2, cy = 62, R1 = 24, R2 = 12, calm = mode === "calm"; g.save(); g.globalAlpha = calm ? .5 : .85; g.lineCap = "round";
+  for (let s = 0; s < 16; s++) { const a = s / 16 * 6.2832 - 1.5708, on = s === MB.step; g.strokeStyle = on ? "#fff" : "rgba(255,255,255,.35)"; g.lineWidth = on ? 3 : 1.5; g.beginPath(); g.moveTo(cx + Math.cos(a) * (R1 - 3), cy + Math.sin(a) * (R1 - 3)); g.lineTo(cx + Math.cos(a) * (R1 + 3), cy + Math.sin(a) * (R1 + 3)); g.stroke(); }
+  let km = 0; for (let k = 0; k < 5; k++) { const a = k / 5 * 6.2832 - 1.5708, px = cx + Math.cos(a) * R2, py = cy + Math.sin(a) * R2; if (MB.arp[k] > MB.arp[km]) km = k; g.fillStyle = hsl(hue + k * 60, 100, 62, .35 + MB.arp[k] * .65); g.beginPath(); g.arc(px, py, 2.2 + MB.arp[k] * (calm ? 1 : 3), 0, 7); g.fill(); }
+  if (MB.step >= 0 && MB.arp[km] > .15) { const a1 = km / 5 * 6.2832 - 1.5708, a2 = MB.step / 16 * 6.2832 - 1.5708; g.strokeStyle = hsl(hue + km * 60, 100, 70, MB.arp[km] * .6); g.lineWidth = 1; g.beginPath(); g.moveTo(cx + Math.cos(a1) * R2, cy + Math.sin(a1) * R2); g.lineTo(cx + Math.cos(a2) * R1, cy + Math.sin(a2) * R1); g.stroke(); }
+  if (MB.kick > .05) { g.strokeStyle = hsl(hue, 100, 70, MB.kick * .5); g.lineWidth = 2; g.beginPath(); g.arc(cx, cy, R1 + 7 + MB.kick * 4, 0, 7); g.stroke(); }
+  // an orbiting bell appears as a glowing dot circling a top-down view of the room (below is behind you)
+  if (MB.bell && ac) { const b = MB.bell, el = ac.currentTime - b.t; if (el > 3.4) MB.bell = null; else if (el > 0) { const th = b.dir * el / 3.12 * 6.2832 + 3.1416, x = Math.sin(th), z = -Math.cos(th), bx = W / 2 + x * W * .42, by = H * .5 + z * H * .22, al = Math.max(0, 1 - el / 3.4), gl = g.createRadialGradient(bx, by, 0, bx, by, 26); gl.addColorStop(0, hsl(hue + 200, 100, 80, .9 * al)); gl.addColorStop(1, hsl(hue + 200, 100, 60, 0)); g.fillStyle = gl; g.fillRect(bx - 26, by - 26, 52, 52); } }
+  g.restore();
+}
 
 // ---------- 6:66 ----------
 // 6 minutes 66 seconds = 426 s after you press start. Add #horror to the link to jump to it after 6 s.
@@ -701,6 +742,45 @@ const GM = {
 function startGames() { game = { i: -1, cur: null }; go(9); $("skip").hidden = false; nextGame(); }
 function nextGame() { if (!game) return; game.i++; gtoken++; if (game.i >= GAMES.length) { game.cur = null; game.end = performance.now(); setCap("TRANSMOGRIFY", "You began with a toy duck. Everything since was the same attention in a different shape. Tap to begin again."); $("skip").hidden = true; whoosh(1, 2); return; } game.cur = GM[GAMES[game.i]](); }
 function restartAll() { techno = true; game = null; $("skip").hidden = true; phase = -1; hueT = 330; steerX = 0; steerY = 0; go(0); say(0); }
+
+
+// ---------- in-page recorder: the picture and the master audio to a video file, on this device only ----------
+// Records the canvas (including dial and captions, drawn onto it while recording) and everything the page plays through Web Audio.
+// The spoken line in the 6:66 scene is the browser's own speech engine and is not part of the Web Audio graph, so it is not recorded.
+let recorder = null, recChunks = [], recT0 = 0, recTimer = 0, recDest = null, recUrl = null, recExt = "webm";
+const REC_MAX_S = 8 * 60;
+function recMime() { if (!window.MediaRecorder || !cv.captureStream) return null; return ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm", "video/mp4"].find((m) => MediaRecorder.isTypeSupported(m)) || ""; }
+function recBox(msg, withVideo) { $("recmsg").textContent = msg; $("recvid").style.display = withVideo ? "block" : "none"; $("recsave").style.display = withVideo ? "block" : "none"; $("recbox").hidden = false; }
+function recClean() { if (recUrl) { URL.revokeObjectURL(recUrl); recUrl = null; } $("recvid").removeAttribute("src"); $("recbox").hidden = true; }
+function startRec() {
+  const mime = recMime(); if (mime === null) return recBox("This browser cannot record the page. Try a recent Chrome, Edge or Firefox.", false);
+  if (!audio() || !masterNode) return recBox("Audio is not ready yet. Press Start first.", false);
+  recClean(); if (!recDest) { recDest = ac.createMediaStreamDestination(); masterNode.connect(recDest); }
+  let stream; try { stream = new MediaStream([...cv.captureStream(30).getVideoTracks(), ...recDest.stream.getAudioTracks()]); recorder = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 4000000, audioBitsPerSecond: 192000 } : undefined); } catch (e) { recorder = null; return recBox("Recording could not start in this browser.", false); }
+  recExt = /mp4/.test(recorder.mimeType) ? "mp4" : "webm"; recChunks = [];
+  recorder.ondataavailable = (e) => { if (e.data && e.data.size) recChunks.push(e.data); };
+  recorder.onstop = finishRec; recorder.start(1000); recT0 = performance.now();
+  $("rec").setAttribute("aria-pressed", "true"); $("hud").style.visibility = "hidden"; recTimer = setInterval(tickRec, 500); tickRec();
+}
+function tickRec() { if (!recorder) return; const s = Math.floor((performance.now() - recT0) / 1000); $("rec").textContent = "■ " + String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); if (s >= REC_MAX_S) stopRec(); }
+function stopRec() { if (recorder && recorder.state !== "inactive") recorder.stop(); clearInterval(recTimer); $("rec").setAttribute("aria-pressed", "false"); $("rec").textContent = "● Record"; $("hud").style.visibility = "visible"; }
+function finishRec() {
+  const r = recorder; recorder = null; if (!recChunks.length) return recBox("Nothing was recorded.", false);
+  const blob = new Blob(recChunks, { type: (r && r.mimeType) || "video/webm" }); window.__lastRec = blob; recUrl = URL.createObjectURL(blob); $("recvid").src = recUrl;
+  recBox("Recorded " + (blob.size / 1048576).toFixed(1) + " MB, kept on this device only." + (muted ? " Sound was off, so the audio is silent." : "") + " If Save does nothing, press and hold the video to save it.", true);
+}
+function saveRec() { if (!recUrl) return; const d = new Date(), z = (n) => String(n).padStart(2, "0"), a = document.createElement("a"); a.href = recUrl; a.download = "mallard-protocol-" + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + "-" + z(d.getHours()) + z(d.getMinutes()) + z(d.getSeconds()) + "." + recExt; document.body.appendChild(a); a.click(); a.remove(); }
+// captions are normal page text, so while recording they are also drawn onto the canvas
+function drawCaps() {
+  const t = $("cap").textContent, s = $("sub").textContent; if (!t && !s) return; const fs = Math.max(14, Math.min(W, H) * .045), maxW = W * .9;
+  g.save(); g.textAlign = "center"; g.shadowColor = "#000"; g.shadowBlur = 14; g.fillStyle = "#f3ecef"; g.font = "400 " + fs + "px 'Rubik Mono One','Arial Black',sans-serif";
+  let y = H - Math.max(24, H * .04); const sf = fs * .62, lines = []; g.font = "400 " + sf + "px 'DM Sans',sans-serif"; let cur = "";
+  s.split(" ").forEach((w) => { const tst = cur ? cur + " " + w : w; if (g.measureText(tst).width > maxW && cur) { lines.push(cur); cur = w; } else cur = tst; }); if (cur) lines.push(cur);
+  g.fillStyle = "#b3a6b2"; for (let i = lines.length - 1; i >= 0; i--) { g.fillText(lines[i], W / 2, y); y -= sf * 1.35; }
+  y -= fs * .4; g.font = "400 " + fs + "px 'Rubik Mono One','Arial Black',sans-serif"; g.fillStyle = "#f3ecef"; g.fillText(t, W / 2, y); g.restore();
+}
+$("rec").onclick = () => { if (recorder) stopRec(); else startRec(); };
+$("recsave").onclick = saveRec; $("recclose").onclick = recClean;
 
 // ---------- gate ----------
 $("ok").onchange = (e) => { $("bint").disabled = !e.target.checked; };

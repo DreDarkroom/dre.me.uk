@@ -1,0 +1,10 @@
+# Runs the headless-browser regression tests in a clean, repeatable Linux box.
+# The Playwright image already contains Chromium and its system libraries. Keep the tag in step with tests/package.json.
+FROM mcr.microsoft.com/playwright:v1.56.1-noble
+WORKDIR /work
+COPY tests/package.json tests/package-lock.json* ./tests/
+RUN cd tests && npm install --no-audit --no-fund
+COPY labs ./labs
+COPY tests ./tests
+WORKDIR /work/tests
+CMD ["npm", "test"]

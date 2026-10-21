@@ -37,9 +37,30 @@ State found:
 - `main` contains `labs/` with the index, Beat Match, Beat Match Roads and Mallard (up to the Wonderland scene). Homepage `index.html` is the original links page.
 - Draft PR #10 (music engine) is open and not merged.
 - Other open draft PRs in the repo belong to other sessions (shop prototype, Greentea Peng tribute, wobbly collab page, MULE game, DreDOS v0.1 marked "do not merge"). They were not touched.
-- A front-door Worker (`dre-front-door`) is described in PR #7 as serving `dre.me.uk`, with Dub as fallthrough. So merging files to this repo does not by itself make a `/labs/` page appear on `dre.me.uk`.
+- The domain dre.me.uk is served through Cloudflare and Dub, so files in this repo may not appear there. (Details are kept in the private repo.)
 - A public URL for `labs/mallard/` was **not verified**: the AI sandbox cannot reach `dre.me.uk` or the github.io address (connection refused by its proxy).
 Regression evidence (headless Chromium, fake clock fast-forward, branch head): phases 1 to 8 advance, games 0 to 5 advance, the end card appears, the 6:66 robot appears and ends. No page errors.
+
+## 2026-10-19: creative direction expansion and v9 (event bus)
+Dre asked for: a richer score (inspired by Noisia's sound design and Max Cooper's maths-sound-visual link, original work only), audio-reactive visuals driven by musical structure, research on the Salt-Wax live apparatus, research on DevelopDrop, and a longer-term reusable instrument. Done as research plus one small build; see `ROADMAP.md`.
+- **Built (v9):** a music event bus. The score now emits step, bar, kick, arpeggio and bell events; the picture releases them on the audio clock. First visible results: a small dial showing the 16-step bar against the 5-step arpeggio cycle, a dot following the orbiting bell, a kick ring, and a colour shift at section changes.
+- **Verified (headless Chromium):** events are produced and consumed (for example in one 6 s run: 49 steps, 4 bars, 13 kicks, 43 arpeggio notes; a bell event appeared in the breakdown); the colour target moves from 330 to 380 at bar 16; audio peaks unchanged (0.14 to 0.84, no clipping); the full journey still runs end to end with no page errors.
+- **Not verified:** how it looks or feels on a real phone and TV; whether the dial is clear to a first-time viewer.
+- **Research findings:** Salt-Wax not identified (needs name or reference from Dre). DevelopDrop is a real, mature repository whose event-on-audio-clock design was adopted. Max Cooper and Noisia notes are summarised with their limits in `ROADMAP.md`.
+- **Recommended next milestone:** an in-page record button (canvas plus master audio to WebM), which would also work around the OBS audio-capture problem.
+- **Process note:** these changes sit on the same branch as the `labs.dre.me.uk` deploy config (PR #11), because the session is limited to one branch. They are independent and can be reviewed separately by commit.
+
+## 2026-10-19: v10 in-page recorder
+Built at Dre's request as the recommended next milestone (and a workaround for the OBS audio-capture problem). See `ROADMAP.md` for the full description, evidence and limits.
+- **Verified (headless Chromium):** 4.7 s test recording, 1.5 MB, WebM (VP9 + Opus); audio decoded and non-silent (RMS 0.146); video 412 x 860; captions and dial appear in the recording; second recording works; no page errors; audio peaks and the full journey regression unchanged.
+- **Not verified:** real devices, Safari or iPhone, Save behaviour in Dre's browser, that OBS capture is no longer needed, the robot's voice line (not captured: browser speech is outside the Web Audio graph).
+
+## 2026-10-19: names, domain, Cloudflare probe, AI briefing pack
+- Dre chose: universe **DazzleDre//\DreDazzle**, short name **Daz**, slug `DazzleDre-DreDazzle`, domain **dazzle.dredarkroom.com**, planned Dub short link `dre.me.uk/daz`. Words to use later: stellar, discombobulated, transmogrify. Recorded in `ROADMAP.md`.
+- **Cloudflare probe (read-only):** done; findings are recorded in the private repo. No DNS or zone tools are available to the AI, so zone ownership and existing DNS records were not checked.
+- **Deploy config** moved from `deploy/labs` (labs.dre.me.uk) to `deploy/dazzle` (dazzle.dredarkroom.com). Dry run clean. Not deployed.
+- **AI briefing pack** written (shared context, handoff protocol, tasks for ChatGPT as orchestrator, Gemini, Dola, Jules and an optional Antigravity prompt). It is kept in the private repo, not here.
+- **Not possible from here:** setting up Antigravity (a separate Google IDE with no connection to this session), contacting other AIs, DNS or Dub changes.
 
 ## Known blockers
 See `README.md`. In short: no verified deployment, OBS audio capture, no DNS/Cloudflare access for the AI session, logo and photos not retrievable, no playtest notes.
@@ -58,3 +79,8 @@ This is a documented issue on Dre's machine and was not reproduced by the AI. Qu
 1. Listen to the v8 score and say keep / change / revert.
 2. Say whether PR #10 should be merged.
 3. Decide where the public experiment should live (clickfiction or another host) and who sets up DNS.
+
+## 2026-10-20: daz-log (local daily summaries)
+- Added `tools/daz-log/`: a standard-library Python script that writes one Markdown summary per day from Git history and, optionally, a local ActivityWatch server. See its README for privacy, limits and how to run it.
+- **Verified (Linux cloud sandbox):** 7 unit tests pass, including idempotent re-runs, AFK intersection and window titles never reaching the report, using a fake local server. A real run over this repo for 2026-10-19 listed the 9 commits of that day.
+- **Not verified:** any real ActivityWatch install (none reachable from the sandbox), Windows, and the scheduled-task commands. Nothing is scheduled or enabled.
