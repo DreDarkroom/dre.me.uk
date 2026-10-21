@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#000000">
+<title>DreDOS v0.1</title>
+<style>
+:root{--bg:#000;--panel:#0d0606;--accent:#690000;--accent-hi:#c45a5a;--line:#2a0f0f;--text:#ece4e4;--dim:#a89898;--ok:#58c27d}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+main{max-width:34rem;margin:0 auto;padding:1rem 1rem 4rem}
+header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--accent);padding-bottom:.5rem;margin-bottom:1rem}
+h1{margin:0;font-size:1.4rem;letter-spacing:.04em}
+h1 span{color:var(--accent-hi);font-weight:400;font-size:.8rem;margin-left:.4rem}
+#today{color:var(--dim);font-size:.85rem}
+section{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:.6rem;padding:.9rem;margin-bottom:1rem}
+h2{margin:0 0 .6rem;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-hi)}
+h3{margin:.8rem 0 .3rem;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+input,select,textarea,button{font:inherit;color:var(--text);background:#160a0a;border:1px solid #3a1818;border-radius:.5rem;padding:.65rem .75rem;min-height:48px}
+input,textarea,select{width:100%}
+textarea{resize:vertical;min-height:5rem}
+button{background:var(--accent);border-color:var(--accent);font-weight:600;cursor:pointer}
+button.ghost{background:transparent;border-color:#3a1818;color:var(--dim);font-weight:400}
+button.sm{min-height:44px;min-width:44px;padding:.3rem .7rem}
+:focus-visible{outline:2px solid var(--accent-hi);outline-offset:2px}
+.row{display:flex;gap:.5rem;margin-top:.5rem}
+.row>input,.row>select{flex:1;min-width:0}
+.big{font-size:1.2rem;line-height:1.35;margin:0 0 .6rem}
+.empty{color:var(--dim);font-style:italic}
+ul{list-style:none;margin:.4rem 0 0;padding:0}
+li{display:flex;gap:.4rem;align-items:center;justify-content:space-between;padding:.25rem 0;border-top:1px solid var(--line)}
+li .t{flex:1;word-break:break-word}
+li small{color:var(--dim)}
+.scale{display:flex;gap:.4rem;margin:.2rem 0 .5rem}
+.scale button{flex:1;background:#160a0a;border-color:#3a1818;font-weight:400}
+.scale button[aria-pressed=true]{background:var(--accent);border-color:var(--accent-hi);font-weight:700}
+label.chk{display:flex;gap:.6rem;align-items:center;min-height:44px}
+label.chk input{width:1.4rem;min-height:0;height:1.4rem;accent-color:var(--accent)}
+details summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:var(--accent-hi)}
+.note{color:var(--dim);font-size:.85rem}
+.pill{display:inline-block;border:1px solid var(--accent);border-radius:1rem;padding:0 .5rem;font-size:.7rem;color:var(--accent-hi);margin-left:.3rem}
+#msg{min-height:1.4rem;color:var(--ok);font-size:.85rem}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<header><h1>DreDOS<span>v0.1</span></h1><div id="today"></div></header>
+
+<section aria-labelledby="h-next">
+  <h2 id="h-next">Next action</h2>
+  <p class="big" id="next-text"></p>
+  <div class="row"><input id="next-in" placeholder="Set the one next action" maxlength="200" aria-label="Next action"><button id="next-set">Set</button></div>
+  <div class="row"><button class="ghost" id="next-done">Mark done</button></div>
+</section>
+
+<section aria-labelledby="h-cap">
+  <h2 id="h-cap">Quick capture</h2>
+  <div class="row"><input id="cap-in" placeholder="Idea or task…" maxlength="200" aria-label="Capture text"><select id="cap-type" aria-label="Type" style="max-width:6.5rem"><option>idea</option><option>task</option></select></div>
+  <div class="row"><button id="cap-add">Capture</button></div>
+  <ul id="cap-list"></ul>
+</section>
+
+<section aria-labelledby="h-proj">
+  <h2 id="h-proj">Projects</h2>
+  <div id="proj-groups"></div>
+  <div class="row"><input id="proj-in" placeholder="New project" maxlength="80" aria-label="Project name"><select id="proj-status" aria-label="Status" style="max-width:6.5rem"><option>active</option><option>paused</option><option>blocked</option></select></div>
+  <div class="row"><button id="proj-add">Add project</button></div>
+</section>
+
+<section aria-labelledby="h-well">
+  <h2 id="h-well">Wellbeing <span class="note">(today)</span></h2>
+  <div>Energy</div><div class="scale" id="sc-energy" role="group" aria-label="Energy 1 to 5"></div>
+  <div>Mood</div><div class="scale" id="sc-mood" role="group" aria-label="Mood 1 to 5"></div>
+  <label class="chk"><input type="checkbox" id="w-water"> Water</label>
+  <label class="chk"><input type="checkbox" id="w-eat"> Ate properly</label>
+  <label class="chk"><input type="checkbox" id="w-move"> Moved / stretched</label>
+  <p class="note">A personal log, not medical advice. Resets each day; only today is kept in detail.</p>
+</section>
+
+<section aria-labelledby="h-ai">
+  <h2 id="h-ai">AI orchestration</h2>
+  <details open><summary>Reference</summary>
+  <ul>
+    <li><span class="t"><b>1. Brief</b><br><small>One goal, one constraint list, one definition of done.</small></span></li>
+    <li><span class="t"><b>2. Inspect first</b><br><small>Ask for findings before changes. Read-only pass.</small></span></li>
+    <li><span class="t"><b>3. Build small</b><br><small>One bounded task per session. Additive, on a branch.</small></span></li>
+    <li><span class="t"><b>4. Verify</b><br><small>Demand evidence (tests, URLs, diffs), not claims.</small></span></li>
+    <li><span class="t"><b>5. Close out</b><br><small>Record the next action before stopping.</small></span></li>
+  </ul>
+  <p class="note">Never paste secrets, keys or private data into any AI session.</p>
+  </details>
+</section>
+
+<section aria-labelledby="h-close">
+  <h2 id="h-close">Session close-out</h2>
+  <textarea id="close-in" maxlength="400" placeholder="What is the very next action for next session?" aria-label="Next action for next session"></textarea>
+  <div class="row"><button id="close-btn">Save &amp; set as next action</button></div>
+  <p class="note" id="close-last"></p>
+</section>
+
+<section aria-labelledby="h-data">
+  <h2 id="h-data">Your data</h2>
+  <p class="note"><b>Stored only in this browser on this device</b> (localStorage). It is <b>not synced</b> to your other devices, has no backup, and can be lost if you clear site data or use a private window. Nothing is sent anywhere. Use Export to keep a copy; Import to restore it elsewhere.</p>
+  <p class="note">Anyone with access to this unlocked browser can read it. Don't store anything sensitive here.</p>
+  <div class="row"><button class="ghost" id="exp">Export JSON</button><button class="ghost" id="imp">Import JSON</button><button class="ghost" id="rst">Reset</button></div>
+  <input type="file" id="imp-file" accept="application/json,.json" hidden>
+  <div id="msg" role="status" aria-live="polite"></div>
+</section>
+</main>
+
+<script>
+"use strict";
+(function () {
+  var KEY = "dredos.v0.1", STATUSES = ["active", "paused", "blocked"];
+  var $ = function (id) { return document.getElementById(id); };
+  var memOnly = false;
+
+  function demo() {
+    return {
+      v: 1, next: { text: "Demo: draft the first set list for the summer event", done: false },
+      captures: [{ id: 1, type: "idea", text: "Demo: timelapse of the stage build" }, { id: 2, type: "task", text: "Demo: confirm van booking" }],
+      projects: [{ id: 1, name: "Demo: Festival line-up", status: "active" }, { id: 2, name: "Demo: Mix archive", status: "paused" }, { id: 3, name: "Demo: Merch design", status: "blocked" }],
+      wellbeing: { date: "", energy: 0, mood: 0, water: false, eat: false, move: false },
+      closeLast: ""
+    };
+  }
+  function today() { var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function valid(d) {
+    return d && typeof d === "object" && d.next && typeof d.next.text === "string" && Array.isArray(d.captures) && Array.isArray(d.projects) && d.wellbeing && typeof d.wellbeing === "object";
+  }
+  function load() {
+    try { var r = localStorage.getItem(KEY); if (r) { var d = JSON.parse(r); if (valid(d)) return d; } } catch (e) { memOnly = true; }
+    return demo();
+  }
+  var S = load();
+  if (S.wellbeing.date !== today()) S.wellbeing = { date: today(), energy: 0, mood: 0, water: false, eat: false, move: false };
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { memOnly = true; flash("Browser storage unavailable: changes will be lost on reload. Use Export."); }
+  }
+  function flash(t) { $("msg").textContent = t; }
+  function nid(a) { return a.reduce(function (m, x) { return Math.max(m, x.id || 0); }, 0) + 1; }
+  function el(tag, text, cls) { var e = document.createElement(tag); if (text != null) e.textContent = text; if (cls) e.className = cls; return e; }
+  function btn(label, fn, aria) { var b = el("button", label, "ghost sm"); b.type = "button"; b.setAttribute("aria-label", aria); b.onclick = fn; return b; }
+
+  function render() {
+    $("today").textContent = new Date().toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+    var n = S.next, nt = $("next-text");
+    nt.textContent = n.text ? (n.done ? "✓ " : "") + n.text : "No next action set.";
+    nt.className = "big" + (n.text ? "" : " empty");
+    nt.style.textDecoration = n.done ? "line-through" : "none";
+
+    var cl = $("cap-list"); cl.textContent = "";
+    if (!S.captures.length) { var li0 = el("li"); li0.appendChild(el("span", "Nothing captured.", "t empty")); cl.appendChild(li0); }
+    S.captures.forEach(function (c) {
+      var li = el("li"), t = el("span", null, "t"); t.appendChild(document.createTextNode(c.text)); t.appendChild(el("span", c.type, "pill")); li.appendChild(t);
+      if (c.type === "task") li.appendChild(btn("→ Next", function () { S.next = { text: c.text, done: false }; save(); render(); }, "Make next action: " + c.text));
+      li.appendChild(btn("✕", function () { S.captures = S.captures.filter(function (x) { return x !== c; }); save(); render(); }, "Delete: " + c.text));
+      cl.appendChild(li);
+    });
+
+    var pg = $("proj-groups"); pg.textContent = "";
+    STATUSES.forEach(function (st) {
+      var items = S.projects.filter(function (p) { return p.status === st; });
+      pg.appendChild(el("h3", st + " (" + items.length + ")"));
+      var ul = el("ul");
+      items.forEach(function (p) {
+        var li = el("li"); li.appendChild(el("span", p.name, "t"));
+        var sel = el("select"); sel.style.width = "7.4rem"; sel.setAttribute("aria-label", "Status of " + p.name);
+        STATUSES.forEach(function (o) { var op = el("option", o); op.value = o; if (o === p.status) op.selected = true; sel.appendChild(op); });
+        sel.onchange = function () { p.status = sel.value; save(); render(); };
+        li.appendChild(sel);
+        li.appendChild(btn("✕", function () { S.projects = S.projects.filter(function (x) { return x !== p; }); save(); render(); }, "Delete project: " + p.name));
+        ul.appendChild(li);
+      });
+      pg.appendChild(ul);
+    });
+
+    ["energy", "mood"].forEach(function (k) {
+      var box = $("sc-" + k); box.textContent = "";
+      for (var i = 1; i <= 5; i++) (function (i) {
+        var b = el("button", String(i)); b.type = "button"; b.setAttribute("aria-pressed", String(S.wellbeing[k] === i));
+        b.onclick = function () { S.wellbeing[k] = S.wellbeing[k] === i ? 0 : i; save(); render(); };
+        box.appendChild(b);
+      })(i);
+    });
+    ["water", "eat", "move"].forEach(function (k) { $("w-" + k).checked = !!S.wellbeing[k]; });
+    $("close-last").textContent = S.closeLast ? "Last close-out: " + S.closeLast : "";
+  }
+
+  function onEnter(id, fn) { $(id).addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); fn(); } }); }
+  function setNext() { var v = $("next-in").value.trim(); if (!v) return; S.next = { text: v, done: false }; $("next-in").value = ""; save(); render(); }
+  function addCap() { var v = $("cap-in").value.trim(); if (!v) return; S.captures.unshift({ id: nid(S.captures), type: $("cap-type").value === "task" ? "task" : "idea", text: v }); $("cap-in").value = ""; save(); render(); }
+  function addProj() { var v = $("proj-in").value.trim(); if (!v) return; var st = $("proj-status").value; S.projects.push({ id: nid(S.projects), name: v, status: STATUSES.indexOf(st) < 0 ? "active" : st }); $("proj-in").value = ""; save(); render(); }
+
+  $("next-set").onclick = setNext; onEnter("next-in", setNext);
+  $("next-done").onclick = function () { if (S.next.text) { S.next.done = !S.next.done; save(); render(); } };
+  $("cap-add").onclick = addCap; onEnter("cap-in", addCap);
+  $("proj-add").onclick = addProj; onEnter("proj-in", addProj);
+  ["water", "eat", "move"].forEach(function (k) { $("w-" + k).onchange = function (e) { S.wellbeing[k] = e.target.checked; save(); }; });
+  $("close-btn").onclick = function () {
+    var v = $("close-in").value.trim(); if (!v) return;
+    S.next = { text: v, done: false }; S.closeLast = today() + ": " + v; $("close-in").value = ""; save(); render(); flash("Close-out saved and set as next action.");
+  };
+  $("exp").onclick = function () {
+    var a = el("a"), u = URL.createObjectURL(new Blob([JSON.stringify(S, null, 2)], { type: "application/json" }));
+    a.href = u; a.download = "dredos-" + today() + ".json"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 1000);
+    flash("Exported. Keep the file somewhere safe: it is your only backup.");
+  };
+  $("imp").onclick = function () { $("imp-file").click(); };
+  $("imp-file").onchange = function (e) {
+    var f = e.target.files[0]; if (!f) return;
+    if (f.size > 1e6) { flash("File too large."); return; }
+    var r = new FileReader();
+    r.onload = function () {
+      try { var d = JSON.parse(r.result); if (!valid(d)) throw 0; if (!confirm("Replace current data with this file?")) return; S = d; save(); render(); flash("Imported."); }
+      catch (err) { flash("Not a valid DreDOS export."); }
+    };
+    r.readAsText(f); e.target.value = "";
+  };
+  $("rst").onclick = function () { if (confirm("Erase all DreDOS data in this browser and restore demo content?")) { S = demo(); S.wellbeing.date = today(); save(); render(); flash("Reset to demo content."); } };
+
+  render();
+  if (memOnly) flash("Browser storage unavailable: changes will be lost on reload. Use Export.");
+})();
+</script>
+</body>
+</html>
